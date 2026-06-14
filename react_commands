@@ -1,0 +1,14 @@
+npm update                # Update all packages
+npm update <package-name> # Update specific package
+npm install               # Install required dependencies
+npm run dev               # Run web application on local PC
+npm list                 # List installed packages
+npm start   # Same as: npm run start
+npm test    # Run tests
+npm run dev # Common dev server
+npm cache clean --force # Cache and Cleanup
+npm version patch   # Bug fixes
+npm version minor   # New features
+npm version major   # Breaking changes
+npm info <package-name> # Package
+npm view <package-name> version # Specific Version
