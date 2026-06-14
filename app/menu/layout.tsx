@@ -31,6 +31,7 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { link } from "fs";
 
 const navLinks = [
   { label: "Sales", href: "/menu/sales", icon: IconReceipt2 },
@@ -112,7 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Menu.Label>Application</Menu.Label>
                 <Menu.Item leftSection={<IconSettings size={14} />}>Settings</Menu.Item>
                 <Menu.Divider />
-                <Menu.Item color="red">Log out</Menu.Item>
+                <Menu.Item component={Link} href="/login" color="red">Log out</Menu.Item>
               </Menu.Dropdown>
             </Menu>
           </Group>
