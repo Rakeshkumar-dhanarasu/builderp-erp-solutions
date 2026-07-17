@@ -39,7 +39,8 @@ const navLinks = [
   { label: "Project Management", href: "/menu/project-management", icon: IconBriefcase },
   { label: "Purchase", href: "/menu/purchase", icon: IconShoppingCart },
   { label: "Reports", href: "/menu/reports", icon: IconReportAnalytics },
-  { label: "Management", href: "/menu/management", icon: IconUsers }
+  { label: "Stakeholders", href: "/menu/stakeholders", icon: IconUsers },
+  { label: "Inventory", href: "/menu/inventory", icon: IconShoppingCart },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
