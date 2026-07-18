@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Card,
+  Container,
   Group,
   Text,
   Badge,
@@ -187,7 +188,7 @@ export default function InventoryManagementPage() {
   const maxAvailableForTransfer = selectedStockItemInfo ? selectedStockItemInfo.availableQty : 0;
 
   return (
-    <Stack gap="md" style={{ width: "100%" }}>
+    <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       {/* MODULE HEADER BAR */}
       <Card withBorder radius="md" p="md" bg="var(--mantine-color-body)">
         <Group justify="space-between" align="center">
@@ -1024,6 +1025,6 @@ export default function InventoryManagementPage() {
           </Group>
         </Stack>
       </Drawer>
-    </Stack>
+    </Container>
   );
 }

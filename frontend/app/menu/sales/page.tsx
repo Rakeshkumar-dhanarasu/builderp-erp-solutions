@@ -140,7 +140,7 @@ export default function SalesModule() {
   };
 
   return (
-    <Container size="xl" py="md">
+    <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       <Paper p="md" radius="md" mb="xl" withBorder>
         <Group justify="between" mb="xs">
           <div>

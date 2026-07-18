@@ -1,290 +1,443 @@
-"use client";
+"use client"
 
-import React, { useState } from "react";
-import { 
-  SimpleGrid, 
-  Card, 
-  Group, 
-  Text, 
-  Badge, 
-  Button, 
-  Table, 
-  Stack, 
-  Select, 
-  Progress,
-  ThemeIcon,
+import React, { useState } from 'react';
+import {
+  Tabs,
+  Container,
+  Group,
+  Title,
+  Text,
+  Button,
+  Table,
+  Badge,
+  TextInput,
+  Select,
+  MultiSelect,
   Grid,
-  NavLink
-} from "@mantine/core";
-import { 
-  IconFileSpreadsheet, 
-  IconPackage, 
-  IconReportMoney,
-  IconChartBar,
-  IconFilter,
-  IconBookmark
-} from "@tabler/icons-react";
+  Card,
+  RingProgress,
+  ActionIcon,
+  Modal,
+  Paper,
+  Divider,
+  Progress,
+  Tooltip,
+  Pagination,
+  Menu
+} from '@mantine/core';
+import {
+  IconSearch, IconFilter, IconDownload, IconPrinter, IconLayoutGrid, IconUsers,
+  IconShoppingCart, IconArchive, IconCurrencyRupee, IconChartPie, IconMaximize,
+  IconColumns, IconTrendingUp, IconAlertTriangle, IconRotate, IconCheck
+} from '@tabler/icons-react';
 
-// Cross-Module Data Warehouse Mock Engine
-const reportProjectsData = [
-  {
-    id: "p1",
-    clientName: "Alpha Manufacturing Corp",
-    category: "Operational",
-    metrics: { sales: 185000, purchase: 45000, margin: 75.6, progress: 80 },
-    insights: { type: "success", text: "Project tracking optimal. Margin healthy." },
-    stockLevel: 85,
-    variance: -5 // Under budget
-  },
-  {
-    id: "p2",
-    clientName: "Omega Logistics Infrastructure",
-    category: "Financial",
-    metrics: { sales: 620000, purchase: 185000, margin: 70.1, progress: 45 },
-    insights: { type: "danger", text: "Over-budget exposure risk on Phase 2 concrete works." },
-    stockLevel: 25, // Low Stock Alert
-    variance: 14 // 14% over budget
-  },
-  {
-    id: "p3",
-    clientName: "Apex Retail Developers",
-    category: "Inventory",
-    metrics: { sales: 140000, purchase: 12000, margin: 91.4, progress: 15 },
-    insights: { type: "warning", text: "Subcontractor dispatch lagging against milestones." },
-    stockLevel: 95,
-    variance: 0
-  }
-];
+// ==========================================
+// CENTRAL COMPONENT MOCK DATA STRATEGIES
+// ==========================================
+const PROJECT_LIST = ['Phoenix Commercial Complex', 'Nexus Luxury Apartments', 'Vertex Tech Park'];
+const STAKEHOLDER_COUNTS = { totalCust: 14, totalVend: 28, totalSub: 19, active: 48, inactive: 13 };
+const PURCHASE_COUNTS = { totalPO: 142, active: 31, completed: 111, pendDeliv: 9, pendVendPay: 14, pendSubPay: 6 };
+const INVENTORY_COUNTS = { totalItems: 420, avail: 380, lowStock: 32, outStock: 8, totalGodowns: 4, incoming: 12 };
+const SALES_COUNTS = { totalQ: 84, accepted: 52, revision: 12, budgetAlloc: 8500000, received: 6200000, outstanding: 2300000 };
+const PROJECT_COUNTS = { totalProj: 12, active: 5, completed: 6, delayed: 1, budgetUtil: 68, overallComp: 74 };
 
-export default function ReportsPage() {
-  // Global Filter State Matrix
-  const [selectedProject, setSelectedProject] = useState<string>("all");
-  const [activeCategory, setActiveCategory] = useState<string>("Operational");
-  const [timeRange, setTimeRange] = useState<string>("Quarter-to-Date");
+// ==========================================
+// CORE MODULE IMPLEMENTATION
+// ==========================================
+export default function ReportsModule() {
+  const [activeTab, setActiveTab] = useState<string | null>('stakeholders');
+  const [viewingReport, setViewingReport] = useState<any | null>(null);
+  const [fullscreenReport, setFullscreenReport] = useState(false);
 
-  // Dynamic cross-module data compilation aggregation engine
-  const filteredData = reportProjectsData.filter(p => {
-    const projectMatch = selectedProject === "all" || p.id === selectedProject;
-    return projectMatch;
-  });
-
-  // Roll-up summary calculations for metrics
-  const totalSalesRollup = filteredData.reduce((acc, curr) => acc + curr.metrics.sales, 0);
-  const totalPurchaseRollup = filteredData.reduce((acc, curr) => acc + curr.metrics.purchase, 0);
-  const averageMargin = filteredData.reduce((acc, curr) => acc + curr.metrics.margin, 0) / filteredData.length;
-
-  const formatCurrency = (val: number) => `$${val.toLocaleString()}`;
+  // Status Colors Helper
+  const getStatusBadge = (status: string) => {
+    const maps: Record<string, string> = {
+      'Active': 'green', 'Inactive': 'gray', 'Completed': 'green', 'Pending': 'yellow',
+      'Delayed': 'red', 'Accepted': 'green', 'Under Revision': 'orange', 'Paid': 'green',
+      'Overdue': 'red', 'High': 'red', 'Medium': 'orange', 'Low': 'gray'
+    };
+    return <Badge color={maps[status] || 'blue'} variant="light">{status}</Badge>;
+  };
 
   return (
-    <Stack gap="md" style={{ width: "100%" }}>
-      
-      {/* GLOBAL BI FILTERS TOP BAR */}
-      <Card withBorder radius="md" p="sm" shadow="xs">
-        <Stack gap="xs">
-          <Group justify="space-between" align="center">
+    <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
+      {/* Module Title Banner */}
+      <Paper p="md" radius="md" mb="xl" withBorder>
+        <Group justify="between" mb="xs">
+          <div>
+            <Title order={2}>Centralized Reporting & Business Analytics Center</Title>
+            <Text size="sm" c="dimmed">Cross-examine ledger matrices and structural metrics aggregated across modules.</Text>
+          </div>
+          <Group gap="xs">
+            <Button size="xs" variant="outline" color="gray" leftSection={<IconRotate size={14} />}>Reset Filters</Button>
+            <Button size="xs" variant="light" leftSection={<IconPrinter size={14} />}>Print Master Dashboard</Button>
+          </Group>
+        </Group>
+      </Paper>
+
+      {/* ==========================================
+          GLOBAL FILTER BAR SECTION
+         ========================================== */}
+      <Card withBorder radius="md" p="md" mb="xl" bg="var(--mantine-color-gray-0)">
+        <Text size="xs" fw={700} c="dimmed" mb="xs">GLOBAL REPORT PARAMS</Text>
+        <Grid align="end">
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <TextInput type="date" label="Horizon Start Window" defaultValue="2026-01-01" />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <MultiSelect label="Filter Enterprise Scope" placeholder="All Active Projects" data={PROJECT_LIST} />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 2 }}>
+            <Select label="Client Target" placeholder="Select Customer" data={['Phoenix Infra Corp', 'Nexus Living Spaces']} clearable />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 2 }}>
+            <Select label="Supply Vector" placeholder="Select Vendor" data={['Ambuja Cements', 'Jindal Steel']} clearable />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 2 }}>
+            <Button fullWidth color="blue" leftSection={<IconFilter size={16} />}>Generate</Button>
+          </Grid.Col>
+        </Grid>
+      </Card>
+
+      {/* Navigation Layer */}
+      <Tabs value={activeTab} onChange={setActiveTab} variant="outline" radius="md">
+        <Tabs.List mb="lg">
+          <Tabs.Tab value="stakeholders" leftSection={<IconUsers size={16} />}>Stakeholder Reports</Tabs.Tab>
+          <Tabs.Tab value="purchase" leftSection={<IconShoppingCart size={16} />}>Purchase Reports</Tabs.Tab>
+          <Tabs.Tab value="inventory" leftSection={<IconArchive size={16} />}>Inventory Reports</Tabs.Tab>
+          <Tabs.Tab value="sales" leftSection={<IconCurrencyRupee size={16} />}>Sales Reports</Tabs.Tab>
+          <Tabs.Tab value="projects" leftSection={<IconLayoutGrid size={16} />}>Project Reports</Tabs.Tab>
+        </Tabs.List>
+
+        {/* ==========================================
+            TAB 1: STAKEHOLDER ARCHIVES
+           ========================================== */}
+        <Tabs.Panel value="stakeholders">
+          {/* Summary Panels */}
+          <Grid mb="xl">
+            {[
+              { title: 'Total Customers', val: STAKEHOLDER_COUNTS.totalCust },
+              { title: 'Total Suppliers/Vendors', val: STAKEHOLDER_COUNTS.totalVend },
+              { title: 'Total Subcontractors', val: STAKEHOLDER_COUNTS.totalSub },
+              { title: 'Operational Run-rate (Active)', val: STAKEHOLDER_COUNTS.active, color: 'green' }
+            ].map((card, i) => (
+              <Grid.Col span={{ base: 6, sm: 3 }} key={i}>
+                <Paper withBorder p="sm" radius="md">
+                  <Text size="xs" c="dimmed" fw={700}>{card.title.toUpperCase()}</Text>
+                  <Text size="xl" fw={700} c={card.color}>{card.val}</Text>
+                </Paper>
+              </Grid.Col>
+            ))}
+          </Grid>
+
+          <ReportTableSection 
+            title="Customer Enterprise Ledger Balance"
+            onView={() => setViewingReport({ title: "Customer Report Archive" })}
+            headers={['Customer Name', 'Projects Handled', 'Gross Quote Value', 'Payments Acquired', 'Outstanding Gap', 'Status']}
+            rows={[
+              ['Phoenix Infra Corp', '2 Active', '₹20,00,000', '₹13,00,000', '₹7,00,000', 'Active'],
+              ['Nexus Living Spaces', '1 Active', '₹45,00,000', '₹45,00,000', '₹0.00', 'Active']
+            ]}
+            badgeColIndex={5}
+          />
+        </Tabs.Panel>
+
+        {/* ==========================================
+            TAB 2: PROCUREMENT & PURCHASING
+           ========================================== */}
+        <Tabs.Panel value="purchase">
+          <Grid mb="xl">
+            {[
+              { title: 'Total PO Files Issued', val: PURCHASE_COUNTS.totalPO },
+              { title: 'Active Supply Chains', val: PURCHASE_COUNTS.active, color: 'blue' },
+              { title: 'Pending Deliveries Inbound', val: PURCHASE_COUNTS.pendDeliv, color: 'orange' },
+              { title: 'Outstanding Vendor Liabilities', val: PURCHASE_COUNTS.pendVendPay, color: 'red' }
+            ].map((card, i) => (
+              <Grid.Col span={{ base: 6, sm: 3 }} key={i}>
+                <Paper withBorder p="sm" radius="md">
+                  <Text size="xs" c="dimmed" fw={700}>{card.title.toUpperCase()}</Text>
+                  <Text size="xl" fw={700} c={card.color}>{card.val}</Text>
+                </Paper>
+              </Grid.Col>
+            ))}
+          </Grid>
+
+          <ReportTableSection 
+            title="Purchase Order Ledger Records"
+            onView={() => setViewingReport({ title: "Purchase Order Register" })}
+            headers={['PO Identifier', 'Asset Class', 'Associated Supplier', 'Target Scope', 'Gross Value Passed', 'Status']}
+            rows={[
+              ['PO-2026-0041', 'Aggregates & Bulk Cement', 'Ambuja Cements Ltd', 'Phoenix Complex', '₹6,50,000', 'Completed'],
+              ['PO-2026-0042', 'Structural I-Beams Structural Tonnage', 'Jindal Steel Frameworks', 'Nexus Spaces', '₹14,20,000', 'Pending']
+            ]}
+            badgeColIndex={5}
+          />
+        </Tabs.Panel>
+
+        {/* ==========================================
+            TAB 3: INVENTORY LOGISTICS
+           ========================================== */}
+        <Tabs.Panel value="inventory">
+          <Grid mb="xl" align="stretch">
+            <Grid.Col span={{ base: 12, md: 8 }}>
+              <Grid>
+                {[
+                  { title: 'Total Managed Item Classes', val: INVENTORY_COUNTS.totalItems },
+                  { title: 'Liquid Available Reserves', val: INVENTORY_COUNTS.avail },
+                  { title: 'Deficient Critical Shortages (Low Stock)', val: INVENTORY_COUNTS.lowStock, color: 'orange' },
+                  { title: 'Depleted Stockout Exposures', val: INVENTORY_COUNTS.outStock, color: 'red' }
+                ].map((card, i) => (
+                  <Grid.Col span={{ base: 6 }} key={i}>
+                    <Paper withBorder p="sm" radius="md">
+                      <Text size="xs" c="dimmed" fw={700}>{card.title.toUpperCase()}</Text>
+                      <Text size="lg" fw={700} c={card.color}>{card.val}</Text>
+                    </Paper>
+                  </Grid.Col>
+                ))}
+              </Grid>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <Card withBorder p="sm" radius="md">
+                <Text size="xs" fw={700} c="dimmed" mb="xs">GODOWN UTILIZATION SUMMARY</Text>
+                <div style={{ marginBottom: '10px' }}>
+                  <Group justify="between" mb={4}><Text size="xs">Main Yards Warehouse A</Text><Text size="xs" fw={700}>82%</Text></Group>
+                  <Progress color="blue" value={82} radius="xl" />
+                </div>
+                <div>
+                  <Group justify="between" mb={4}><Text size="xs">Structural Storage Facility B</Text><Text size="xs" fw={700}>41%</Text></Group>
+                  <Progress color="cyan" value={41} radius="xl" />
+                </div>
+              </Card>
+            </Grid.Col>
+          </Grid>
+
+          <ReportTableSection 
+            title="Real-time Inventory Allocations Status"
+            onView={() => setViewingReport({ title: "In-hand Warehouse Register" })}
+            headers={['Material Element Description', 'Category Set', 'Godown Yard Allocation', 'In-Hand Volume Available', 'Unit Metrics', 'Safety Status']}
+            rows={[
+              ['M30 Structural Concrete Grade Mix', 'Bulk Materials', 'Main Yards Warehouse A', '1,450', 'CuM', 'Active'],
+              ['High-Tensile Steel Rebar Grade 500D', 'Metals & Hardware', 'Structural Storage Facility B', '12', 'Tons', 'Inactive']
+            ]}
+            badgeColIndex={5}
+          />
+        </Tabs.Panel>
+
+        {/* ==========================================
+            TAB 4: COMMERCIAL SALES LIFECYCLE
+           ========================================== */}
+        <Tabs.Panel value="sales">
+          <Grid mb="xl">
+            <Grid.Col span={{ base: 12, md: 8 }}>
+              <Grid>
+                {[
+                  { title: 'Total Generated Quotation Configurations', val: SALES_COUNTS.totalQ },
+                  { title: 'Approved/Accepted Pipeline Accounts', val: SALES_COUNTS.accepted, color: 'green' },
+                  { title: 'Liquid Inflows Realized (Received)', val: `₹${SALES_COUNTS.received.toLocaleString('en-IN')}` },
+                  { title: 'Outstanding Receivables Exposure', val: `₹${SALES_COUNTS.outstanding.toLocaleString('en-IN')}`, color: 'orange' }
+                ].map((card, i) => (
+                  <Grid.Col span={{ base: 6 }} key={i}>
+                    <Paper withBorder p="sm" radius="md">
+                      <Text size="xs" c="dimmed" fw={700}>{card.title.toUpperCase()}</Text>
+                      <Text size="md" fw={700} c={card.color}>{card.val}</Text>
+                    </Paper>
+                  </Grid.Col>
+                ))}
+              </Grid>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <Card withBorder radius="md" p="md">
+                <Group justify="center">
+                  <RingProgress
+                    size={130}
+                    thickness={12}
+                    roundCaps
+                    sections={[
+                      { value: 72, color: 'green', tooltip: 'Realized Liquidity' },
+                      { value: 28, color: 'orange', tooltip: 'Outstanding Balances' }
+                    ]}
+                    label={<Text size="xs" ta="center" fw={700} c="dimmed">72% Settled</Text>}
+                  />
+                </Group>
+              </Card>
+            </Grid.Col>
+          </Grid>
+
+          <ReportTableSection 
+            title="Quotation Commit Status Tracker"
+            onView={() => setViewingReport({ title: "Sales & Estimations Registry Pipeline" })}
+            headers={['Quote Reference Identifier', 'Target Enterprise Framework', 'Client Profile Link', 'Gross Quoted Contract Sum', 'Status State']}
+            rows={[
+              ['QT-2026-001', 'Phoenix Commercial Complex', 'Phoenix Infra Corp', '₹20,00,000', 'Accepted'],
+              ['QT-2026-002', 'Nexus Luxury Apartments', 'Nexus Living Spaces', '₹45,00,000', 'Under Revision']
+            ]}
+            badgeColIndex={4}
+          />
+        </Tabs.Panel>
+
+        {/* ==========================================
+            TAB 5: METRIC PROJECT INDEXES
+           ========================================== */}
+        <Tabs.Panel value="projects">
+          <Grid mb="xl">
+            {[
+              { title: 'Master Project Profiles', val: PROJECT_COUNTS.totalProj },
+              { title: 'Active Infrastructure Foundations', val: PROJECT_COUNTS.active, color: 'blue' },
+              { title: 'Delayed / Critical Boundary Exceptions', val: PROJECT_COUNTS.delayed, color: 'red' },
+              { title: 'Aggregate Completion Matrix', val: `${PROJECT_COUNTS.overallComp}%`, color: 'teal' }
+            ].map((card, i) => (
+              <Grid.Col span={{ base: 6, sm: 3 }} key={i}>
+                <Paper withBorder p="sm" radius="md">
+                  <Text size="xs" c="dimmed" fw={700}>{card.title.toUpperCase()}</Text>
+                  <Text size="xl" fw={700} c={card.color}>{card.val}</Text>
+                </Paper>
+              </Grid.Col>
+            ))}
+          </Grid>
+
+          <ReportTableSection 
+            title="Operational Project Structural Timelines Execution"
+            onView={() => setViewingReport({ title: "Master Enterprise Execution Progress Profile" })}
+            headers={['Infrastructure Target Project', 'Client Scope', 'Scheduled Execution Boundary', 'Completion Ratio %', 'Status Level']}
+            rows={[
+              ['Phoenix Commercial Complex', 'Phoenix Infra Corp', '2026-12-31 Boundary Limit', '68% Complete Ratio', 'Active'],
+              ['Nexus Luxury Apartments', 'Nexus Living Spaces', '2026-10-15 Target Threshold', '100% Final Handover', 'Completed']
+            ]}
+            badgeColIndex={4}
+          />
+        </Tabs.Panel>
+      </Tabs>
+
+      {/* ==========================================
+          INTERACTIVE REPORT VIEWING DRAWER/MODAL
+         ========================================== */}
+      <Modal
+        opened={!!viewingReport}
+        onClose={() => { setViewingReport(null); setFullscreenReport(false); }}
+        title={viewingReport?.title || "System Report Archive Workspace"}
+        size={fullscreenReport ? "100%" : "lg"}
+        radius="md"
+      >
+        <Paper p="md" bg="var(--mantine-color-gray-1)" radius="md" style={{ fontFamily: 'monospace' }} mb="lg">
+          <Group justify="between" mb="md">
+            <div>
+              <Text fw={700} size="sm">COMPLIANCE LEDGER PROFILE EXTRACT</Text>
+              <Text size="xs" c="dimmed">Generated Live: July 2026 | System Secure Token: PMS-REP-SECURE</Text>
+            </div>
             <Group gap="xs">
-              <ThemeIcon variant="transparent" color="indigo"><IconFilter size={16} /></ThemeIcon>
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase">Global Analytical Filter Matrix</Text>
-            </Group>
-            <Group gap="xs">
-              <Button size="xs" variant="light" color="gray" leftSection={<IconBookmark size={14} />}>
-                Load Saved Template
-              </Button>
-              <Button size="xs" color="indigo" leftSection={<IconFileSpreadsheet size={14} />}>
-                Export Unified CSV
-              </Button>
+              <Tooltip label="Toggle Full Screen Layout"><ActionIcon variant="light" onClick={() => setFullscreenReport(!fullscreenReport)}><IconMaximize size={16} /></ActionIcon></Tooltip>
+              <Button size="xs" color="green" leftSection={<IconCheck size={14} />} onClick={() => setViewingReport(null)}>Done</Button>
             </Group>
           </Group>
           
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-            <Select
-              label="Cross-Module Project Node"
-              placeholder="All Cross-Module Scope Data"
-              data={[{ value: "all", label: "All Master Records" }, ...reportProjectsData.map(p => ({ value: p.id, label: p.clientName }))]}
-              value={selectedProject}
-              onChange={(val) => val && setSelectedProject(val)}
-              radius="sm"
-              size="xs"
-            />
-            <Select
-              label="Temporal Date Parameter"
-              placeholder="Select Window"
-              data={["Current Month", "Quarter-to-Date", "Fiscal Year 2026", "Historical Inactive Logs"]}
-              value={timeRange}
-              onChange={(val) => val && setTimeRange(val)}
-              radius="sm"
-              size="xs"
-            />
-            <Select
-              label="Downstream Vendor Status Routing"
-              placeholder="All Active Frameworks"
-              data={["All Internal Nodes", "Verified Cleared Partners Only", "Flags & Watchlists"]}
-              defaultValue="All Internal Nodes"
-              radius="sm"
-              size="xs"
-            />
-          </SimpleGrid>
-        </Stack>
-      </Card>
+          <Divider my="md" />
+          
+          <Table variant="striped" highlightOnHover withTableBorder style={{ backgroundColor: '#ffffff' }}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Audit Data Column Index Element</Table.Th>
+                <Table.Th style={{ textAlign: 'right' }}>Calculated Balance Metrics</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {[
+                { label: 'Primary Active Site Infrastructure Operations Sum', val: '₹65,00,000' },
+                { label: 'Realized Escrow Settlement Inflow Tonnage', val: '₹58,00,000' },
+                { label: 'Deficient Outstanding Client Arrears Liability', val: '₹7,00,000' }
+              ].map((row, idx) => (
+                <Table.Tr key={idx}>
+                  <Table.Td><Text size="xs">{row.label}</Text></Table.Td>
+                  <Table.Td style={{ textAlign: 'right', fontWeight: 'bold' }}><Text size="xs" fw={700} suppressHydrationWarning>${row.val}</Text></Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Paper>
 
-      {/* THREE-COLUMN INTELLIGENCE HUB CORE */}
-      {/* FIXED: Replaced non-existent 'gutter' prop with modern Mantine 'gap' token */}
-      <Grid columns={12} gap="md">
-        
-        {/* SIDEBAR: REPORT VIEW CATEGORIES SELECTION */}
-        <Grid.Col span={{ base: 12, md: 3 }}>
-          <Card withBorder radius="md" p="xs" style={{ height: "100%" }}>
-            <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="xs" pl="xs">Report Vectors</Text>
-            <Stack gap={4}>
-              <NavLink
-                href="#operational"
-                label="Operational Architecture"
-                description="Site Performance, WOs, Teams"
-                active={activeCategory === "Operational"}
-                leftSection={<IconChartBar size={16} />}
-                onClick={() => setActiveCategory("Operational")}
-                color="indigo"
-                variant="light"
-              />
-              <NavLink
-                href="#financial"
-                label="Financial Ledgers"
-                description="Aggregated Payables & Receivables"
-                active={activeCategory === "Financial"}
-                leftSection={<IconReportMoney size={16} />}
-                onClick={() => setActiveCategory("Financial")}
-                color="indigo"
-                variant="light"
-              />
-              <NavLink
-                href="#inventory"
-                label="Material Stock Routing"
-                description="Warehouse Hubs & Site Spares"
-                active={activeCategory === "Inventory"}
-                leftSection={<IconPackage size={16} />}
-                onClick={() => setActiveCategory("Inventory")}
-                color="indigo"
-                variant="light"
-              />
-            </Stack>
-          </Card>
-        </Grid.Col>
+        <Group justify="end" gap="xs">
+          <Button variant="default" onClick={() => setViewingReport(null)}>Close Workspace</Button>
+          <Menu shadow="md" width={160}>
+            <Menu.Target>
+              <Button variant="light" color="blue" leftSection={<IconDownload size={14} />}>Export Formats</Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<IconTrendingUp size={14} />}>Excel (.xlsx) Format</Menu.Item>
+              <Menu.Item leftSection={<IconAlertTriangle size={14} />}>PDF High Resolution</Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+          <Button color="blue" leftSection={<IconPrinter size={14} />}>Execute Local Print Job</Button>
+        </Group>
+      </Modal>
+    </Container>
+  );
+}
 
-        {/* MAIN ANALYSIS REPORT VIEWPORT */}
-        <Grid.Col span={{ base: 12, md: 9 }}>
-          <Stack gap="md">
-            
-            {/* AGGREGATE SUMMARY ROLL-UP CARDS */}
-            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-              <Card withBorder p="sm" radius="md">
-                <Text size="xs" c="dimmed" fw={700}>TOTAL GROUP VALUATION</Text>
-                <Text size="lg" fw={700} c="indigo" mt={2}>{formatCurrency(totalSalesRollup)}</Text>
-                <Progress value={85} color="indigo" size="xs" mt="xs" />
-              </Card>
-              <Card withBorder p="sm" radius="md">
-                <Text size="xs" c="dimmed" fw={700}>TOTAL EXPENDITURE BURDEN</Text>
-                <Text size="lg" fw={700} c="orange" mt={2}>{formatCurrency(totalPurchaseRollup)}</Text>
-                <Progress value={(totalPurchaseRollup / totalSalesRollup) * 100} color="orange" size="xs" mt="xs" />
-              </Card>
-              <Card withBorder p="sm" radius="md">
-                <Text size="xs" c="dimmed" fw={700}>AGGREGATE COGS MARGIN</Text>
-                <Text size="lg" fw={700} c="teal" mt={2}>{averageMargin.toFixed(1)}%</Text>
-                <Progress value={averageMargin} color="teal" size="xs" mt="xs" />
-              </Card>
-            </SimpleGrid>
+// ==========================================
+// REUSABLE PRESENTATION TABLE CONTAINER
+// ==========================================
+interface ReportTableSectionProps {
+  title: string;
+  headers: string[];
+  rows: string[][];
+  badgeColIndex?: number;
+  onView: () => void;
+}
 
-            {/* CRITICAL EXCEPTION ENGINE (SMART INSIGHTS) */}
-            {/* FIXED: Removed hardcoded background color property to let theme systems natively evaluate background layers */}
-            <Card withBorder radius="md" p="sm">
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="xs">Automated ML Exception Ledger</Text>
-              <Stack gap="xs">
-                {filteredData.map(p => (
-                  <Group 
-                    key={p.id} 
-                    justify="space-between" 
-                    wrap="nowrap" 
-                    style={{ 
-                      // Natively maps custom warning flags via standard Mantine system colors without breaking theme contracts
-                      borderLeft: `3px solid var(--mantine-color-${p.insights.type === "danger" ? "red" : p.insights.type === "warning" ? "yellow" : "green"}-6)`, 
-                      paddingLeft: 8 
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Text size="xs" fw={600}>{p.clientName}</Text>
-                      <Text size="xs" c="dimmed">{p.insights.text}</Text>
-                    </Stack>
-                    <Badge color={p.insights.type === "danger" ? "red" : p.insights.type === "warning" ? "yellow" : "green"} size="xs" variant="light">
-                      {p.insights.type === "danger" ? "Action Required" : p.insights.type === "warning" ? "Watchlist" : "Nominal"}
-                    </Badge>
-                  </Group>
+function ReportTableSection({ title, headers, rows, badgeColIndex, onView }: ReportTableSectionProps) {
+  return (
+    <Card withBorder radius="md" p="md" mt="md">
+      <Group justify="between" mb="md">
+        <Text fw={700} size="sm" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <IconChartPie size={16} color="var(--mantine-color-blue-6)" /> {title}
+        </Text>
+        <Group gap="xs">
+          <Menu shadow="md">
+            <Menu.Target>
+              <ActionIcon variant="subtle" size="sm" color="gray"><IconColumns size={16} /></ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Label>Column Visibility Mapping</Menu.Label>
+              {headers.map((h, idx) => <Menu.Item key={idx}>{h}</Menu.Item>)}
+            </Menu.Dropdown>
+          </Menu>
+          <Button size="xs" variant="default" leftSection={<IconSearch size={12} />} onClick={onView}>Inspect Manifest</Button>
+        </Group>
+      </Group>
+
+      <Table.ScrollContainer minWidth={600}>
+        <Table variant="simple" highlightOnHover verticalSpacing="xs">
+          <Table.Thead>
+            <Table.Tr>
+              {headers.map((h, i) => <Table.Th key={i}>{h}</Table.Th>)}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {rows.map((row, rIdx) => (
+              <Table.Tr key={rIdx}>
+                {row.map((cell, cIdx) => (
+                  <Table.Td key={cIdx} style={{ whiteSpace: 'nowrap' }}>
+                    {badgeColIndex === cIdx ? (
+                      <Badge color={cell === 'Active' || cell === 'Accepted' || cell === 'Completed' ? 'green' : 'orange'} variant="light">
+                        {cell}
+                      </Badge>
+                    ) : (
+                      <Text size="xs">{cell}</Text>
+                    )}
+                  </Table.Td>
                 ))}
-              </Stack>
-            </Card>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
 
-            {/* INTERACTIVE DATA VISUALIZERS (BAR PLOT IMPLEMENTATION VIA PROGRESS COMPONENTS) */}
-            <Card withBorder radius="md" p="md">
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md">Cross-Module Structural Distribution Plot</Text>
-              <Stack gap="md">
-                {filteredData.map(p => (
-                  <div key={p.id}>
-                    <Group justify="space-between" mb={4}>
-                      <Text size="xs" fw={600}>{p.clientName}</Text>
-                      <Group gap="xs">
-                        <Text size="xs" c="dimmed">Sales: <strong style={{ color: "var(--mantine-color-text)" }}>{formatCurrency(p.metrics.sales)}</strong></Text>
-                        <Text size="xs" c="dimmed">Stock Security: <strong style={{ color: p.stockLevel < 30 ? "var(--mantine-color-red-filled)" : "var(--mantine-color-text)" }}>{p.stockLevel}%</strong></Text>
-                      </Group>
-                    </Group>
-                    <Progress.Root size="xl">
-                      <Progress.Section value={p.metrics.progress} color="indigo">
-                        <Progress.Label>Execution Progress ({p.metrics.progress}%)</Progress.Label>
-                      </Progress.Section>
-                      <Progress.Section value={p.variance > 0 ? p.variance : 0} color="red">
-                        <Progress.Label>Overrun</Progress.Label>
-                      </Progress.Section>
-                    </Progress.Root>
-                  </div>
-                ))}
-              </Stack>
-            </Card>
-
-            {/* THE DRILL-DOWN LEDGER ENGINE TABLE */}
-            <Card withBorder radius="md" p="0" style={{ overflow: "hidden" }}>
-              <Table variant="simple" verticalSpacing="sm" highlightOnHover>
-                {/* FIXED: Removed raw background inline style configuration. Mantine v7 handles dark/light table header states natively */}
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Project Cluster Entity (Click Row to Drill-Down)</Table.Th>
-                    <Table.Th style={{ textAlign: "right" }}>Contract Baseline</Table.Th>
-                    <Table.Th style={{ textAlign: "right" }}>Procurement Drain</Table.Th>
-                    <Table.Th style={{ textAlign: "right" }}>Cost Variance</Table.Th>
-                    <Table.Th style={{ textAlign: "center" }}>Stock Health Node</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {filteredData.map((p) => (
-                    <Table.Tr key={p.id} style={{ cursor: "pointer" }} onClick={() => alert(`Navigating via Drill-down Link matrix directly to workspace parameters for: ${p.clientName}`)}>
-                      <Table.Td fw={600} c="indigo">{p.clientName}</Table.Td>
-                      <Table.Td style={{ textAlign: "right" }}>{formatCurrency(p.metrics.sales)}</Table.Td>
-                      <Table.Td style={{ textAlign: "right" }}>{formatCurrency(p.metrics.purchase)}</Table.Td>
-                      <Table.Td style={{ textAlign: "right" }}>
-                        <Badge variant="light" color={p.variance > 0 ? "red" : "green"}>
-                          {p.variance > 0 ? `+${p.variance}% Over Budget` : "On Track"}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td style={{ display: "flex", justifyContent: "center" }}>
-                        <Badge color={p.stockLevel < 30 ? "red" : "teal"} variant="filled">
-                          {p.stockLevel < 30 ? "Critical Restock" : "Stable Stock Node"}
-                        </Badge>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Card>
-
-          </Stack>
-        </Grid.Col>
-      </Grid>
-    </Stack>
+      <Divider my="sm" />
+      <Group justify="between">
+        <Text size="xs" c="dimmed">Showing 1-2 of rows cataloged</Text>
+        <Pagination total={1} size="xs" radius="sm" />
+      </Group>
+    </Card>
   );
 }

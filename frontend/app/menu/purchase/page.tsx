@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import {
   Card,
+  Container,
   Group,
   Text,
   Badge,
@@ -168,7 +169,7 @@ export default function PurchaseManagementPage() {
   };
 
   return (
-    <Stack gap="md" style={{ width: "100%" }}>
+    <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       {/* COMPONENT BANNER CONTROL CARD */}
       <Card withBorder radius="md" p="md" bg="var(--mantine-color-body)">
         <Group justify="space-between" align="center">
@@ -806,6 +807,6 @@ export default function PurchaseManagementPage() {
           </Group>
         </Stack>
       </Modal>
-    </Stack>
+    </Container>
   );
 }
