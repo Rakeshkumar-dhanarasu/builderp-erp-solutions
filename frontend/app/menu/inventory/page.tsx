@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import {
+  Paper,
+  Title,
   Card,
   Container,
   Group,
@@ -190,21 +192,21 @@ export default function InventoryManagementPage() {
   return (
     <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       {/* MODULE HEADER BAR */}
-      <Card withBorder radius="md" p="md" bg="var(--mantine-color-body)">
+      <Paper p="md" radius="md" mb="xl" withBorder>
         <Group justify="space-between" align="center">
-          <Stack gap={2}>
-            <Text size="xl" fw={800} style={{ letterSpacing: "-0.5px" }}>Inventory & Warehousing Hub</Text>
-            <Text size="xs" c="dimmed">Track available stock balances, regulate multi-location storage yards, orchestrate cross-dock transfers, and manage core product items.</Text>
+          <Stack gap={4}>
+            <Title order={2}>Inventory & Warehousing Hub</Title>
+            <Text size="sm" c="dimmed">Track available stock balances, regulate multi-location storage yards, orchestrate cross-dock transfers, and manage core product items.</Text>
           </Stack>
         </Group>
-      </Card>
+      </Paper>
 
       {/* CORE MODULE INTERNAL TABS */}
-      <Tabs value={activeModuleTab} onChange={setActiveModuleTab} color="indigo">
+      <Tabs value={activeModuleTab} onChange={setActiveModuleTab} variant="pills">
         <Tabs.List>
-          <Tabs.Tab value="godown" leftSection={<IconMapPin size={14} />}>1. Godown (Locations)</Tabs.Tab>
-          <Tabs.Tab value="stock" leftSection={<IconPackage size={14} />}>2. Stock Management</Tabs.Tab>
-          <Tabs.Tab value="item-master" leftSection={<IconArchive size={14} />}>3. Item Master Directory</Tabs.Tab>
+          <Tabs.Tab value="godown" leftSection={<IconMapPin size={14} />}>Godown (Locations)</Tabs.Tab>
+          <Tabs.Tab value="stock" leftSection={<IconPackage size={14} />}>Stock Management</Tabs.Tab>
+          <Tabs.Tab value="item-master" leftSection={<IconArchive size={14} />}>Item Master Directory</Tabs.Tab>
         </Tabs.List>
 
         {/* ========================================================

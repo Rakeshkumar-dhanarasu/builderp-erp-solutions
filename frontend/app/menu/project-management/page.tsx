@@ -172,13 +172,13 @@ export default function ProjectManagementModule() {
           1. SYSTEM HEADER WORKSPACE
          ==================================================================== */}
       {currentView === 'list' && (
-        <Paper p="lg" radius="md" withBorder>
-          <Group justify="between" align="center">
-            <div>
-              <Title order={2} style={{ letterSpacing: '-0.5px' }}>Project Management Operational Center</Title>
+        <Paper p="md" radius="md" mb="xl" withBorder>
+          <Group justify="space-between" align="center">
+            <Stack gap={4}>
+              <Title order={2}>Project Management Operational Center</Title>
               <Text size="sm" c="dimmed">Track physical lifecycles, budget parameters, inventory drawdowns, and performance streams.</Text>
-            </div>
-            <Group gap="sm">
+            </Stack>
+            <Group gap="sm" align="flex-end">
               <Select
                 size="sm"
                 label="Active Workspace Filter"
@@ -401,7 +401,7 @@ export default function ProjectManagementModule() {
                ==================================================================== */}
             <Tabs.Panel value="budget">
               <Stack gap="md">
-                <Paper p="md" radius="md" withBorder bg="var(--mantine-color-blue-0)">
+                <Paper p="md" radius="md" withBorder>
                   <Group justify="between">
                     <div>
                       <Text fw={700} size="sm" c="blue-dark">Active Capital Stream Focus Target</Text>
@@ -467,7 +467,7 @@ export default function ProjectManagementModule() {
                           { title: 'Other Overheads & Site Contingencies', alloc: '₹20,00,000', consumption: '₹6,00,000', metric: 30 }
                         ].map((row, i) => (
                           <Grid.Col span={{ base: 12, md: 4 }} key={i}>
-                            <Paper p="sm" bg="var(--mantine-color-gray-0)" radius="md">
+                            <Paper p="sm" withBorder radius="md">
                               <Text size="xs" fw={700}>{row.title}</Text>
                               <Divider my="xs" />
                               <Group justify="between" mb={4}><Text size="10px" c="dimmed">Approved Bounds:</Text><Text size="10px" fw={600} suppressHydrationWarning>{row.alloc}</Text></Group>
@@ -537,7 +537,7 @@ export default function ProjectManagementModule() {
 
                   <Table.ScrollContainer minWidth={600}>
                     <Table variant="simple" verticalSpacing="sm">
-                      <Table.Thead style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+                      <Table.Thead>
                         <Table.Tr>
                           <Table.Th>Inventory Item Class Reference</Table.Th>
                           <Table.Th>Material Category</Table.Th>

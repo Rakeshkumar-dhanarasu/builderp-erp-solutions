@@ -63,14 +63,14 @@ export default function ReportsModule() {
     <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       {/* Module Title Banner */}
       <Paper p="md" radius="md" mb="xl" withBorder>
-        <Group justify="between" mb="xs">
+        <Group justify="space-between" mb="xs" align="center">
           <div>
             <Title order={2}>Centralized Reporting & Business Analytics Center</Title>
             <Text size="sm" c="dimmed">Cross-examine ledger matrices and structural metrics aggregated across modules.</Text>
           </div>
           <Group gap="xs">
-            <Button size="xs" variant="outline" color="gray" leftSection={<IconRotate size={14} />}>Reset Filters</Button>
-            <Button size="xs" variant="light" leftSection={<IconPrinter size={14} />}>Print Master Dashboard</Button>
+            <Button size="sm" variant="outline" color="gray" leftSection={<IconRotate size={18} />}>Reset Filters</Button>
+            <Button size="sm" variant="light" leftSection={<IconPrinter size={18} />}>Print Master Dashboard</Button>
           </Group>
         </Group>
       </Paper>
@@ -78,7 +78,7 @@ export default function ReportsModule() {
       {/* ==========================================
           GLOBAL FILTER BAR SECTION
          ========================================== */}
-      <Card withBorder radius="md" p="md" mb="xl" bg="var(--mantine-color-gray-0)">
+      <Card withBorder radius="md" p="md" mb="xl">
         <Text size="xs" fw={700} c="dimmed" mb="xs">GLOBAL REPORT PARAMS</Text>
         <Grid align="end">
           <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
@@ -100,7 +100,7 @@ export default function ReportsModule() {
       </Card>
 
       {/* Navigation Layer */}
-      <Tabs value={activeTab} onChange={setActiveTab} variant="outline" radius="md">
+      <Tabs value={activeTab} onChange={setActiveTab} variant="pills" radius="md">
         <Tabs.List mb="lg">
           <Tabs.Tab value="stakeholders" leftSection={<IconUsers size={16} />}>Stakeholder Reports</Tabs.Tab>
           <Tabs.Tab value="purchase" leftSection={<IconShoppingCart size={16} />}>Purchase Reports</Tabs.Tab>

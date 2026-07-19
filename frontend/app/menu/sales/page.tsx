@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import {
+  Stack,
   Tabs,
   Container,
   Group,
@@ -142,11 +143,11 @@ export default function SalesModule() {
   return (
     <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       <Paper p="md" radius="md" mb="xl" withBorder>
-        <Group justify="between" mb="xs">
-          <div>
+        <Group justify="space-between" align="center">
+          <Stack gap={4}>
             <Title order={2} className="enterprise-title">Commercial Lifecycle Engine</Title>
             <Text size="sm" c="dimmed">Manage configurations for Pre-Construction Contracts, Budgets, and Escrow Trackers.</Text>
-          </div>
+          </Stack>
           <Select 
             label="Active Enterprise Project"
             placeholder="Switch Scope"
@@ -160,7 +161,7 @@ export default function SalesModule() {
         </Group>
       </Paper>
 
-      <Tabs value={activeTab} onChange={setActiveTab} variant="outline" radius="md">
+      <Tabs value={activeTab} onChange={setActiveTab} variant="pills" radius="md">
         <Tabs.List mb="lg">
           <Tabs.Tab value="quotations" leftSection={<IconFileText size={16} />}>Quotations</Tabs.Tab>
           <Tabs.Tab value="budgeting" leftSection={<IconRefresh size={16} />}>Budgeting</Tabs.Tab>

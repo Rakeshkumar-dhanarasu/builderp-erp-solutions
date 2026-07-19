@@ -2,7 +2,10 @@
 
 import React, { useState } from "react";
 import {
+  Paper,
+  Title,
   Grid,
+  Container,
   Card,
   Group,
   Text,
@@ -194,13 +197,13 @@ export default function StakeholdersManagement() {
   };
 
   return (
-    <Stack gap="md" style={{ width: "100%" }}>
+    <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       {/* CORE TOP MODULE APP BANNER HEADER BAR */}
-      <Card withBorder radius="md" p="md" bg="var(--mantine-color-body)">
+      <Paper p="md" radius="md" mb="xl" withBorder>
         <Group justify="space-between" align="center">
-          <Stack gap={2}>
-            <Text size="xl" fw={800} style={{ letterSpacing: "-0.5px" }}>Stakeholders Matrix</Text>
-            <Text size="xs" c="dimmed">Centralized coordination environment for corporate customers, raw material vendors, and trade sub-contractors.</Text>
+          <Stack gap={4}>
+            <Title order={2}>Stakeholders Matrix</Title>
+            <Text size="sm" c="dimmed">Centralized coordination environment for corporate customers, raw material vendors, and trade sub-contractors.</Text>
           </Stack>
           <Button
             size="sm"
@@ -211,14 +214,14 @@ export default function StakeholdersManagement() {
             Add Stakeholder
           </Button>
         </Group>
-      </Card>
+      </Paper>
 
       {/* CORE OPERATIONAL TAB SEPARATION LAYER */}
-      <Tabs value={activeTab} onChange={(value) => { setActiveTab(value); setStatusFilter("All"); }} color="indigo">
+      <Tabs value={activeTab} onChange={(value) => { setActiveTab(value); setStatusFilter("All"); }} variant="pills">
         <Tabs.List>
-          <Tabs.Tab value="Customer" leftSection={<IconUsers size={14} />}>1. Customers</Tabs.Tab>
-          <Tabs.Tab value="Vendor" leftSection={<IconBuildingStore size={14} />}>2. Vendors</Tabs.Tab>
-          <Tabs.Tab value="Sub-contractor" leftSection={<IconCone2 size={14} />}>3. Sub-contractors</Tabs.Tab>
+          <Tabs.Tab value="Customer" leftSection={<IconUsers size={14} />}>Customers</Tabs.Tab>
+          <Tabs.Tab value="Vendor" leftSection={<IconBuildingStore size={14} />}>Vendors</Tabs.Tab>
+          <Tabs.Tab value="Sub-contractor" leftSection={<IconCone2 size={14} />}>Sub-contractors</Tabs.Tab>
         </Tabs.List>
 
         <Grid columns={12} gap="md" mt="md">
@@ -600,6 +603,6 @@ export default function StakeholdersManagement() {
           </Group>
         </Stack>
       </Modal>
-    </Stack>
+    </Container>
   );
 }

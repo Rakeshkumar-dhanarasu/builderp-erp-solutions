@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import {
+  Paper,
+  Title,
   Card,
   Container,
   Group,
@@ -171,11 +173,11 @@ export default function PurchaseManagementPage() {
   return (
     <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       {/* COMPONENT BANNER CONTROL CARD */}
-      <Card withBorder radius="md" p="md" bg="var(--mantine-color-body)">
+      <Paper p="md" radius="md" mb="xl" withBorder>
         <Group justify="space-between" align="center">
-          <Stack gap={2}>
-            <Text size="xl" fw={800} style={{ letterSpacing: "-0.5px" }}>Purchase Ledger Architecture</Text>
-            <Text size="xs" c="dimmed">Coordinate capital-intensive materials acquisition procurement workflows and control active vendor engineering service lines.</Text>
+          <Stack gap={4}>
+            <Title order={2}>Purchase Ledger Architecture</Title>
+            <Text size="sm" c="dimmed">Coordinate capital-intensive materials acquisition procurement workflows and control active vendor engineering service lines.</Text>
           </Stack>
           <Button
             size="sm"
@@ -186,16 +188,16 @@ export default function PurchaseManagementPage() {
             Create Purchase Order
           </Button>
         </Group>
-      </Card>
+      </Paper>
 
       {/* WORKFLOW SPLIT REVENUE NAVIGATION TAB CONTROLLERS */}
-      <Tabs value={activeModuleTab} onChange={setActiveModuleTab} color="indigo">
+      <Tabs variant="pills" value={activeModuleTab} onChange={setActiveModuleTab} color="indigo">
         <Tabs.List>
-          <Tabs.Tab value="po" leftSection={<IconFileText size={14} />}>1. Purchase Orders</Tabs.Tab>
-          <Tabs.Tab value="tracking" leftSection={<IconTruckDelivery size={14} />}>2. Order Tracking Matrix</Tabs.Tab>
-          <Tabs.Tab value="vendor-pay" leftSection={<IconCreditCard size={14} />}>3. Vendor Payments</Tabs.Tab>
-          <Tabs.Tab value="sub-pay" leftSection={<IconCone2 size={14} />}>4. Sub-contractor Payments</Tabs.Tab>
-          <Tabs.Tab value="receipts" leftSection={<IconReceipt size={14} />}>5. Payment Receipts Logs</Tabs.Tab>
+          <Tabs.Tab value="po" leftSection={<IconFileText size={14} />}>Purchase Orders</Tabs.Tab>
+          <Tabs.Tab value="tracking" leftSection={<IconTruckDelivery size={14} />}>Order Tracking Matrix</Tabs.Tab>
+          <Tabs.Tab value="vendor-pay" leftSection={<IconCreditCard size={14} />}>Vendor Payments</Tabs.Tab>
+          <Tabs.Tab value="sub-pay" leftSection={<IconCone2 size={14} />}>Sub-contractor Payments</Tabs.Tab>
+          <Tabs.Tab value="receipts" leftSection={<IconReceipt size={14} />}>Payment Receipts Logs</Tabs.Tab>
         </Tabs.List>
 
         {/* TAB 1 & 2 ROUTING CONTEXT (PURCHASE ORDERS & DISPATCH LOOKUP TRACKING) */}
