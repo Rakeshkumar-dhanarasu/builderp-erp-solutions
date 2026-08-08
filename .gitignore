@@ -14,6 +14,7 @@ frontend/.yarn/*
 frontend/coverage/
 
 # next.js
+.next/
 frontend/.next/
 frontend/out/
 
@@ -35,3 +36,4 @@ frontend/.pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+node_modules
