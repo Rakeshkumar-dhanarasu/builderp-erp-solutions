@@ -320,7 +320,7 @@ export default function ReportsModule() {
         size={fullscreenReport ? "100%" : "lg"}
         radius="md"
       >
-        <Paper p="md" bg="var(--mantine-color-gray-1)" radius="md" style={{ fontFamily: 'monospace' }} mb="lg">
+        <Paper p="md" withBorder radius="md" style={{ fontFamily: 'monospace' }} mb="lg">
           <Group justify="between" mb="md">
             <div>
               <Text fw={700} size="sm">COMPLIANCE LEDGER PROFILE EXTRACT</Text>
@@ -334,7 +334,7 @@ export default function ReportsModule() {
           
           <Divider my="md" />
           
-          <Table variant="striped" highlightOnHover withTableBorder style={{ backgroundColor: '#ffffff' }}>
+          <Table variant="striped" highlightOnHover withTableBorder>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Audit Data Column Index Element</Table.Th>

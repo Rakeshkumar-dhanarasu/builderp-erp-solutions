@@ -445,7 +445,7 @@ export default function StakeholdersManagement() {
           </Text>
         }
         position="right"
-        size="lg"
+        size="100%"
       >
         <Stack gap="md" component="form" onSubmit={(e) => { e.preventDefault(); closeDrawer(); }}>
           

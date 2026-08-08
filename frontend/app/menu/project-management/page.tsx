@@ -1,9 +1,7 @@
 "use client"
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Container,
-  Divider,
   Stack,
   Paper,
   Group,
@@ -12,6 +10,7 @@ import {
   Button,
   Tabs,
   Grid,
+  SimpleGrid,
   TextInput,
   Select,
   MultiSelect,
@@ -19,15 +18,16 @@ import {
   Badge,
   ActionIcon,
   Menu,
-  Tooltip,
   Pagination,
   RingProgress,
   Progress,
   Timeline,
   Modal,
+  Drawer,
   Textarea,
   NumberInput,
-  Skeleton
+  Skeleton,
+  Divider
 } from '@mantine/core';
 import {
   IconFolder,
@@ -43,7 +43,6 @@ import {
   IconUserPlus,
   IconArchive,
   IconCalendar,
-  IconArrowLeft,
   IconRefresh,
   IconLockSquare,
   IconAlertTriangle,
@@ -51,7 +50,7 @@ import {
 } from '@tabler/icons-react';
 
 // ============================================================================
-// TYPES & MOCK DATA STRUCTURES
+// TYPES & MOCK DATA
 // ============================================================================
 interface Project {
   id: string;
@@ -128,30 +127,39 @@ const MOCK_ACTIVITIES = [
 ];
 
 // ============================================================================
-// MASTER ROOT UNIFIED MODULE COMPONENT
+// MAIN COMPONENT MATCHING YOUR EXACT LAYOUT & SPACING
 // ============================================================================
 export default function ProjectManagementModule() {
-  // Page Navigation & View Controls
   const [activeTab, setActiveTab] = useState<string | null>('projects');
-  const [currentView, setCurrentView] = useState<'list' | 'create' | 'edit'>('list');
   const [selectedProjectId, setSelectedProjectId] = useState<string>(MOCK_PROJECTS[0].id);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Modals & Sub-states
+  // Modals & Drawers
+  const [projectDrawerOpened, setProjectDrawerOpened] = useState<boolean>(false);
+  const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
   const [subcontractorModal, setSubcontractorModal] = useState<boolean>(false);
   const [allocateStockModal, setAllocateStockModal] = useState<boolean>(false);
 
-  // Unified Simulated Data Loading State Switcher
   const triggerStateRefresh = (targetTab: string | null) => {
     setActiveTab(targetTab);
     setIsLoading(true);
-    const delay = setTimeout(() => setIsLoading(false), 450);
+    const delay = setTimeout(() => setIsLoading(false), 350);
     return () => clearTimeout(delay);
+  };
+
+  const handleOpenCreateDrawer = () => {
+    setDrawerMode('create');
+    setProjectDrawerOpened(true);
+  };
+
+  const handleOpenEditDrawer = (projId: string) => {
+    setSelectedProjectId(projId);
+    setDrawerMode('edit');
+    setProjectDrawerOpened(true);
   };
 
   const selectedProject = MOCK_PROJECTS.find(p => p.id === selectedProjectId) || MOCK_PROJECTS[0];
 
-  // System Status Color Badges Helper
   const renderStatusBadge = (status: string) => {
     const statusMap: Record<string, string> = {
       'Not Started': 'gray',
@@ -166,102 +174,304 @@ export default function ProjectManagementModule() {
   };
 
   return (
-    <Container fluid p={0} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-xl)', width: '100%' }}>
+    <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       
       {/* ====================================================================
-          1. SYSTEM HEADER WORKSPACE
+          1. HEADER WRAPPER PAPER (Matching your exact header structure)
          ==================================================================== */}
-      {currentView === 'list' && (
-        <Paper p="md" radius="md" mb="xl" withBorder>
-          <Group justify="space-between" align="center">
-            <Stack gap={4}>
-              <Title order={2}>Project Management Operational Center</Title>
-              <Text size="sm" c="dimmed">Track physical lifecycles, budget parameters, inventory drawdowns, and performance streams.</Text>
-            </Stack>
-            <Group gap="sm" align="flex-end">
-              <Select
-                size="sm"
-                label="Active Workspace Filter"
-                value={selectedProjectId}
-                onChange={(val) => setSelectedProjectId(val || MOCK_PROJECTS[0].id)}
-                data={MOCK_PROJECTS.map(p => ({ value: p.id, label: p.name }))}
-                style={{ width: 260 }}
-              />
-              <Button 
-                size="sm" 
-                variant="light" 
-                color="gray" 
-                leftSection={<IconRefresh size={16} />}
-                onClick={() => triggerStateRefresh(activeTab)}
-              >
-                Sync Data
-              </Button>
-            </Group>
-          </Group>
-        </Paper>
-      )}
+      <Paper p="md" radius="md" mb="xl" withBorder>
+        <Group justify="space-between" align="center">
+          <Stack gap={4}>
+            <Title order={2} className="enterprise-title">Project Lifecycle Engine</Title>
+            <Text size="sm" c="dimmed">Track physical lifecycles, budget parameters, inventory drawdowns, and progress.</Text>
+          </Stack>
+          <Select
+            label="Active Enterprise Project"
+            placeholder="Switch Scope"
+            value={selectedProjectId}
+            onChange={(val) => val && setSelectedProjectId(val)}
+            data={MOCK_PROJECTS.map(p => ({ value: p.id, label: p.name }))}
+          />
+        </Group>
+      </Paper>
 
       {/* ====================================================================
-          2. APPLICATION WORKSPACE FLOWS (LIST VS FORMS)
+          2. MODULE TABS (Variant: pills, radius: md, mb: lg)
          ==================================================================== */}
-      {currentView !== 'list' ? (
-        // FORM ARCHITECTURE FLOW (FULL-PAGE EQUIVALENT EDIT VIEW)
-        <Paper p="xl" radius="md" withBorder>
-          <Stack gap="lg">
-            <Group justify="between">
-              <Group gap="xs">
-                <ActionIcon variant="subtle" color="gray" onClick={() => setCurrentView('list')}>
-                  <IconArrowLeft size={20} />
-                </ActionIcon>
-                <Title order={3}>{currentView === 'create' ? 'Initiate New Capital Venture' : `Modify Scope: ${selectedProject.name}`}</Title>
-              </Group>
-              <Badge variant="filled" color="blue" radius="xs">Secure Form Ledger</Badge>
+      <Tabs value={activeTab} onChange={triggerStateRefresh} variant="pills" radius="md">
+        <Tabs.List mb="lg">
+          <Tabs.Tab value="projects" leftSection={<IconFolder size={16} />}>Projects</Tabs.Tab>
+          <Tabs.Tab value="budget" leftSection={<IconReportMoney size={16} />}>Budget Tracking</Tabs.Tab>
+          <Tabs.Tab value="stock" leftSection={<IconBoxSeam size={16} />}>Stock Allocation</Tabs.Tab>
+          <Tabs.Tab value="tracking" leftSection={<IconTrack size={16} />}>Project Tracking</Tabs.Tab>
+        </Tabs.List>
+
+        {/* ==========================================
+            TAB 1: PROJECTS MODULE
+           ========================================== */}
+        <Tabs.Panel value="projects">
+          <Paper p="md" radius="md" mb="xl" withBorder>
+            <Group justify="space-between" align="center">
+              <Stack gap={4}>
+                <Title order={4}>Projects Engine</Title>
+                <Text size="sm" c="dimmed">Manage active project profiles, assign project managers, and oversee timelines.</Text>
+              </Stack>
+              <Button 
+                size="sm"
+                color="indigo"
+                leftSection={<IconPlus size={16} />} 
+                onClick={handleOpenCreateDrawer}
+              >
+                Create Project
+              </Button>
             </Group>
+          </Paper>
 
-            <Grid gap="md">
-              <Grid.Col span={{ base: 12, md: 6 }}><TextInput label="Project Name" placeholder="Enter corporate moniker" required defaultValue={currentView === 'edit' ? selectedProject.name : ''} /></Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6 }}><TextInput label="Project Code Allocation" disabled description="Auto-generated ledger standard" value={currentView === 'edit' ? selectedProject.code : 'PMS-GEN-2026-X'} /></Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6 }}><Select label="Target Customer Entity" placeholder="Select customer group" required data={['Phoenix Infra Corp', 'Nexus Living Spaces', 'Vertex Hubs']} defaultValue={currentView === 'edit' ? selectedProject.customer : undefined} /></Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6 }}><Select label="Operational Venture Sector" data={['Commercial Real Estate', 'Residential High-Rise', 'Industrial Outpost']} defaultValue={currentView === 'edit' ? selectedProject.type : undefined} /></Grid.Col>
-              <Grid.Col span={{ base: 12 }}><TextInput label="Geographic Deployment Location" placeholder="Coordinates or clear postal plot identifiers" required defaultValue={currentView === 'edit' ? selectedProject.location : ''} /></Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 4 }}><TextInput type="date" label="Venture Start Date" defaultValue={currentView === 'edit' ? selectedProject.startDate : ''} /></Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 4 }}><TextInput type="date" label="Projected Target Close Date" defaultValue={currentView === 'edit' ? selectedProject.expectedCompletion : ''} /></Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 4 }}><Select label="Designated Site Project Manager" data={['Arjun Mehta', 'Sarah Dsouza', 'Kabir Singh']} defaultValue={currentView === 'edit' ? selectedProject.projectManager : undefined} /></Grid.Col>
-              <Grid.Col span={{ base: 12 }}><Textarea label="Venture Execution Parameters / Scope Summaries" minRows={3} defaultValue={currentView === 'edit' ? selectedProject.description : ''} /></Grid.Col>
-            </Grid>
+          <Stack gap="md">
+            {/* Filters */}
+            <Paper p="sm" radius="md" withBorder>
+              <Grid gap="sm" align="end">
+                <Grid.Col span={{ base: 12, md: 4 }}>
+                  <TextInput placeholder="Search project name, customer, location..." leftSection={<IconSearch size={16} />} size="xs" />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                  <MultiSelect placeholder="Project Status" data={['Not Started', 'In Progress', 'Completed', 'Delayed']} size="xs" />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                  <Select placeholder="Customer" data={['Phoenix Infra Corp', 'Nexus Living Spaces']} clearable size="xs" />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 2 }}>
+                  <Button fullWidth variant="filled" color="blue" leftSection={<IconFilter size={14} />} size="xs">Filter</Button>
+                </Grid.Col>
+              </Grid>
+            </Paper>
 
-            <Paper p="md" withBorder radius="md" mt="md">
-              <Group justify="between" mb="md">
-                <div>
-                  <Text fw={700} size="sm">Subcontractor Allocation Vectors</Text>
-                  <Text size="xs" c="dimmed">Assign and check active contractual work categories allocated to this localized execution framework.</Text>
-                </div>
-                <Button size="xs" variant="outline" leftSection={<IconUserPlus size={14} />} onClick={() => setSubcontractorModal(true)}>Add Sub-contractor</Button>
+            {/* Table */}
+            <Paper p="md" radius="md" withBorder>
+              {isLoading ? (
+                <Stack gap="xs">
+                  <Skeleton height={32} radius="xs" />
+                  <Skeleton height={28} radius="xs" />
+                  <Skeleton height={28} radius="xs" />
+                </Stack>
+              ) : (
+                <Table.ScrollContainer minWidth={900}>
+                  <Table variant="simple" highlightOnHover verticalSpacing="sm">
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Project Name</Table.Th>
+                        <Table.Th>Customer</Table.Th>
+                        <Table.Th>Location</Table.Th>
+                        <Table.Th>Project Manager</Table.Th>
+                        <Table.Th>Dates</Table.Th>
+                        <Table.Th style={{ textAlign: 'right' }}>Budget Amount</Table.Th>
+                        <Table.Th>Budget Used</Table.Th>
+                        <Table.Th>Status</Table.Th>
+                        <Table.Th style={{ width: 50 }}></Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {MOCK_PROJECTS.map((proj) => (
+                        <Table.Tr key={proj.id}>
+                          <Table.Td>
+                            <Stack gap={2}>
+                              <Text size="xs" fw={600} c="blue">{proj.name}</Text>
+                              <Text size="10px" c="dimmed">{proj.code}</Text>
+                            </Stack>
+                          </Table.Td>
+                          <Table.Td><Text size="xs">{proj.customer}</Text></Table.Td>
+                          <Table.Td><Text size="xs" c="dimmed">{proj.location}</Text></Table.Td>
+                          <Table.Td><Text size="xs">{proj.projectManager}</Text></Table.Td>
+                          <Table.Td>
+                            <Stack gap={2}>
+                              <Text size="10px">Start: {proj.startDate}</Text>
+                              <Text size="10px" c="orange">Exp: {proj.expectedCompletion}</Text>
+                            </Stack>
+                          </Table.Td>
+                          <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600} suppressHydrationWarning>₹{(proj.budgetAmount).toLocaleString('en-IN')}</Text></Table.Td>
+                          <Table.Td style={{ minWidth: 100 }}>
+                            <Group gap={4} mb={2} justify="space-between">
+                              <Text size="10px" fw={600}>{proj.budgetUsedPct}%</Text>
+                            </Group>
+                            <Progress color={proj.budgetUsedPct > 90 ? 'red' : 'blue'} value={proj.budgetUsedPct} size="xs" radius="xl" />
+                          </Table.Td>
+                          <Table.Td>{renderStatusBadge(proj.status)}</Table.Td>
+                          <Table.Td>
+                            <Menu shadow="md" position="bottom-end">
+                              <Menu.Target>
+                                <ActionIcon variant="subtle" color="gray" size="sm"><IconDotsVertical size={14} /></ActionIcon>
+                              </Menu.Target>
+                              <Menu.Dropdown>
+                                <Menu.Item leftSection={<IconEye size={14} />} onClick={() => { setSelectedProjectId(proj.id); triggerStateRefresh('tracking'); }}>View Project</Menu.Item>
+                                <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => handleOpenEditDrawer(proj.id)}>Edit Project</Menu.Item>
+                                <Menu.Item leftSection={<IconArchive size={14} />} color="red">Archive Project</Menu.Item>
+                              </Menu.Dropdown>
+                            </Menu>
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              )}
+
+              <Divider my="sm" />
+              <Group justify="space-between">
+                <Text size="xs" c="dimmed">Showing 2 projects</Text>
+                <Pagination total={1} size="xs" radius="sm" />
               </Group>
+            </Paper>
+          </Stack>
+        </Tabs.Panel>
 
+        {/* ==========================================
+            TAB 2: BUDGET TRACKING
+           ========================================== */}
+        <Tabs.Panel value="budget">
+          <Paper p="md" radius="md" mb="xl" withBorder>
+            <Group justify="space-between" align="center">
+              <Stack gap={4}>
+                <Title order={4}>Budget Tracking Engine</Title>
+                <Text size="sm" c="dimmed">Monitor financial consumption, remaining balance, and historical PO drawdowns.</Text>
+              </Stack>
+              <Button 
+                size="sm"
+                variant="default"
+                leftSection={<IconRefresh size={16} />} 
+                onClick={() => triggerStateRefresh('budget')}
+              >
+                Sync Financials
+              </Button>
+            </Group>
+          </Paper>
+
+          <Stack gap="md">
+            {isLoading ? (
+              <Stack gap="xs">
+                <Skeleton height={80} />
+                <Skeleton height={120} />
+              </Stack>
+            ) : (
+              <>
+                <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+                  <Paper withBorder p="md" radius="md">
+                    <Text size="xs" fw={600} c="dimmed">TOTAL APPROVED BUDGET</Text>
+                    <Text size="lg" fw={700} my={4} suppressHydrationWarning>₹{(selectedProject.budgetAmount).toLocaleString('en-IN')}</Text>
+                    <Text size="10px" c="dimmed">Approved from Sales module quotation</Text>
+                  </Paper>
+
+                  <Paper withBorder p="md" radius="md">
+                    <Text size="xs" fw={600} c="dimmed">AMOUNT USED</Text>
+                    <Text size="lg" fw={700} c="orange" my={4} suppressHydrationWarning>₹{((selectedProject.budgetAmount * selectedProject.budgetUsedPct) / 100).toLocaleString('en-IN')}</Text>
+                    <Text size="10px" c="dimmed">Total consumption to date</Text>
+                  </Paper>
+
+                  <Paper withBorder p="md" radius="md">
+                    <Text size="xs" fw={600} c="dimmed">REMAINING BUDGET</Text>
+                    <Text size="lg" fw={700} c="green" my={4} suppressHydrationWarning>₹{(selectedProject.budgetAmount - (selectedProject.budgetAmount * selectedProject.budgetUsedPct) / 100).toLocaleString('en-IN')}</Text>
+                    <Group gap={4} mt={2}>
+                      <RingProgress size={20} thickness={3} sections={[{ value: selectedProject.budgetUsedPct, color: 'blue' }]} />
+                      <Text size="10px" fw={600}>{100 - selectedProject.budgetUsedPct}% Available</Text>
+                    </Group>
+                  </Paper>
+                </SimpleGrid>
+
+                <Paper p="md" radius="md" withBorder>
+                  <Text fw={600} size="sm" mb="md">Budget Breakdown</Text>
+                  <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+                    {[
+                      { title: 'Material Cost', alloc: '₹80,00,000', consumed: '₹55,00,000', pct: 68 },
+                      { title: 'Sub-contractor Cost', alloc: '₹1,00,00,000', consumed: '₹75,00,000', pct: 75 },
+                      { title: 'Other Expenses', alloc: '₹20,00,000', consumed: '₹6,00,000', pct: 30 }
+                    ].map((b, i) => (
+                      <Paper p="sm" bg="var(--mantine-color-default-hover)" radius="md" key={i}>
+                        <Text size="xs" fw={600}>{b.title}</Text>
+                        <Divider my="xs" />
+                        <Group justify="space-between" mb={2}><Text size="10px" c="dimmed">Allocated:</Text><Text size="10px" fw={600}>{b.alloc}</Text></Group>
+                        <Group justify="space-between" mb={6}><Text size="10px" c="dimmed">Consumed:</Text><Text size="10px" fw={600} c="orange">{b.consumed}</Text></Group>
+                        <Progress size="xs" color="orange" value={b.pct} radius="xl" />
+                      </Paper>
+                    ))}
+                  </SimpleGrid>
+                </Paper>
+
+                <Paper p="md" radius="md" withBorder>
+                  <Text fw={600} size="sm" mb="sm">Budget Transactions</Text>
+                  <Table.ScrollContainer minWidth={600}>
+                    <Table variant="striped" verticalSpacing="xs">
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Th>Date</Table.Th>
+                          <Table.Th>Transaction Type</Table.Th>
+                          <Table.Th>Reference Number</Table.Th>
+                          <Table.Th>Description</Table.Th>
+                          <Table.Th style={{ textAlign: 'right' }}>Amount</Table.Th>
+                          <Table.Th>Status</Table.Th>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {MOCK_TRANSACTIONS.map((t, idx) => (
+                          <Table.Tr key={idx}>
+                            <Table.Td><Text size="xs">{t.date}</Text></Table.Td>
+                            <Table.Td><Badge size="xs" color="gray">{t.type}</Badge></Table.Td>
+                            <Table.Td><Text size="xs" style={{ fontFamily: 'monospace' }}>{t.ref}</Text></Table.Td>
+                            <Table.Td><Text size="xs" c="dimmed">{t.desc}</Text></Table.Td>
+                            <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600} c="red" suppressHydrationWarning>- ₹{t.amount.toLocaleString('en-IN')}</Text></Table.Td>
+                            <Table.Td>{renderStatusBadge(t.status)}</Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  </Table.ScrollContainer>
+                </Paper>
+              </>
+            )}
+          </Stack>
+        </Tabs.Panel>
+
+        {/* ==========================================
+            TAB 3: STOCK ALLOCATION
+           ========================================== */}
+        <Tabs.Panel value="stock">
+          <Paper p="md" radius="md" mb="xl" withBorder>
+            <Group justify="space-between" align="center">
+              <Stack gap={4}>
+                <Title order={4}>Stock Allocation Engine</Title>
+                <Text size="sm" c="dimmed">Allocate godown inventory directly to active construction sites.</Text>
+              </Stack>
+              <Button 
+                size="sm"
+                color="indigo"
+                leftSection={<IconPlus size={16} />} 
+                onClick={() => setAllocateStockModal(true)}
+              >
+                Allocate Stock
+              </Button>
+            </Group>
+          </Paper>
+
+          <Stack gap="md">
+            <Paper p="md" radius="md" withBorder>
+              <Text fw={600} size="sm" mb="md">Available Stock View</Text>
               <Table.ScrollContainer minWidth={600}>
                 <Table variant="simple" verticalSpacing="sm">
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>Sub-contractor Corporate Identity</Table.Th>
-                      <Table.Th>Work Category</Table.Th>
-                      <Table.Th>Operational Scope</Table.Th>
-                      <Table.Th>Assigned Benchmark Date</Table.Th>
-                      <Table.Th>Operational Status</Table.Th>
-                      <Table.Th style={{ width: 80 }}></Table.Th>
+                      <Table.Th>Item Name</Table.Th>
+                      <Table.Th>Category</Table.Th>
+                      <Table.Th>Godown</Table.Th>
+                      <Table.Th style={{ textAlign: 'right' }}>Available Quantity</Table.Th>
+                      <Table.Th>Unit</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
-                    {MOCK_SUBCONTRACTORS.map((sc) => (
-                      <Table.Tr key={sc.id}>
-                        <Table.Td><Text size="xs" fw={700}>{sc.name}</Text></Table.Td>
-                        <Table.Td><Text size="xs">{sc.category}</Text></Table.Td>
-                        <Table.Td><Text size="xs" c="dimmed">{sc.scope}</Text></Table.Td>
-                        <Table.Td><Text size="xs">{sc.date}</Text></Table.Td>
-                        <Table.Td>{renderStatusBadge(sc.status)}</Table.Td>
-                        <Table.Td>
-                          <ActionIcon variant="subtle" color="red" size="sm"><IconArchive size={14} /></ActionIcon>
-                        </Table.Td>
+                    {MOCK_STOCK.map((item) => (
+                      <Table.Tr key={item.id}>
+                        <Table.Td><Text size="xs" fw={600}>{item.name}</Text></Table.Td>
+                        <Table.Td><Text size="xs">{item.category}</Text></Table.Td>
+                        <Table.Td><Text size="xs" c="dimmed">{item.godown}</Text></Table.Td>
+                        <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600}>{item.qty}</Text></Table.Td>
+                        <Table.Td><Text size="xs" c="dimmed">{item.unit}</Text></Table.Td>
                       </Table.Tr>
                     ))}
                   </Table.Tbody>
@@ -269,506 +479,284 @@ export default function ProjectManagementModule() {
               </Table.ScrollContainer>
             </Paper>
 
-            <Group justify="end" mt="xl">
-              <Button variant="default" onClick={() => setCurrentView('list')}>Abort Operations</Button>
-              <Button color="blue" onClick={() => setCurrentView('list')}>Commit Configuration Records</Button>
-            </Group>
+            <Paper p="md" radius="md" withBorder>
+              <Text fw={600} size="sm" mb="sm">Allocated Stock History</Text>
+              <Table.ScrollContainer minWidth={600}>
+                <Table variant="striped" verticalSpacing="xs">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Project</Table.Th>
+                      <Table.Th>Item</Table.Th>
+                      <Table.Th style={{ textAlign: 'right' }}>Quantity Allocated</Table.Th>
+                      <Table.Th>Godown</Table.Th>
+                      <Table.Th>Allocation Date</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                      <Table.Th style={{ width: 80 }}></Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {MOCK_ALLOC_HISTORY.map((h, idx) => (
+                      <Table.Tr key={idx}>
+                        <Table.Td><Text size="xs" fw={600}>{h.project}</Text></Table.Td>
+                        <Table.Td><Text size="xs">{h.item}</Text></Table.Td>
+                        <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600}>{h.qty}</Text></Table.Td>
+                        <Table.Td><Text size="xs" c="dimmed">{h.godown}</Text></Table.Td>
+                        <Table.Td><Text size="xs">{h.date}</Text></Table.Td>
+                        <Table.Td>{renderStatusBadge(h.status)}</Table.Td>
+                        <Table.Td>
+                          <Button size="9px" variant="light" color="orange">Return Stock</Button>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            </Paper>
           </Stack>
-        </Paper>
-      ) : (
-        // CORE TAB CONTAINER LAYOUT
-        <Tabs value={activeTab} onChange={triggerStateRefresh} variant="pills" radius="md">
-          <Tabs.List style={{ borderRadius: '8px 8px 0 0' }}>
-            <Tabs.Tab value="projects" leftSection={<IconFolder size={16} />}>Corporate Venture Directory</Tabs.Tab>
-            <Tabs.Tab value="budget" leftSection={<IconReportMoney size={16} />}>Budget Ledger Optimization</Tabs.Tab>
-            <Tabs.Tab value="stock" leftSection={<IconBoxSeam size={16} />}>Logistics Stock Allocations</Tabs.Tab>
-            <Tabs.Tab value="tracking" leftSection={<IconTrack size={16} />}>Venture Lifecycle Track</Tabs.Tab>
-          </Tabs.List>
+        </Tabs.Panel>
 
-          <div style={{ marginTop: 'var(--mantine-spacing-md)' }}>
-            
-            {/* ====================================================================
-                TAB 1 PANEL: VENTURE DIRECTORY LISTING
-               ==================================================================== */}
-            <Tabs.Panel value="projects">
-              <Stack gap="md">
-                {/* Global Filters Sub-Segment */}
-                <Paper p="md" radius="md" withBorder>
-                  <Grid gap="sm" align="end">
-                    <Grid.Col span={{ base: 12, md: 4 }}>
-                      <TextInput placeholder="Search project clusters, operational targets or clients..." leftSection={<IconSearch size={16} />} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                      <MultiSelect placeholder="Filter Pipeline Status" data={['Not Started', 'In Progress', 'Completed', 'Delayed']} />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                      <Select placeholder="Filter Client Anchor" data={['Phoenix Infra Corp', 'Nexus Living Spaces']} clearable />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 2 }}>
-                      <Button fullWidth variant="filled" color="blue" leftSection={<IconFilter size={16} />}>Apply Parameters</Button>
-                    </Grid.Col>
-                  </Grid>
-                </Paper>
-
-                {/* Main Data Render Frame */}
-                <Paper p="md" radius="md" withBorder>
-                  <Group justify="between" mb="md">
-                    <div>
-                      <Text fw={700} size="sm">Active Enterprise Registry Matrix</Text>
-                      <Text size="xs" c="dimmed">Catalog showing verified strategic master metrics across ongoing engineering frameworks.</Text>
-                    </div>
-                    <Button size="xs" color="blue" leftSection={<IconPlus size={14} />} onClick={() => setCurrentView('create')}>Initiate Master Project</Button>
-                  </Group>
-
-                  {isLoading ? (
-                    <Stack gap="xs">
-                      <Skeleton height={40} radius="xs" />
-                      <Stack gap="sm">{Array.from({ length: 3 }).map((_, index) => (<Skeleton key={index} height={30} radius="xs" />))}</Stack>
-                    </Stack>
-                  ) : (
-                    <Table.ScrollContainer minWidth={900}>
-                      <Table variant="simple" highlightOnHover verticalSpacing="md">
-                        <Table.Thead>
-                          <Table.Tr>
-                            <Table.Th>Venture Designation</Table.Th>
-                            <Table.Th>Client Target</Table.Th>
-                            <Table.Th>Deployment Site Location</Table.Th>
-                            <Table.Th>Project Manager</Table.Th>
-                            <Table.Th>Timeline Metrics</Table.Th>
-                            <Table.Th style={{ textAlign: 'right' }}>Approved Capital Pool</Table.Th>
-                            <Table.Th>Budget Efficiency</Table.Th>
-                            <Table.Th>Status State</Table.Th>
-                            <Table.Th style={{ width: 60 }}></Table.Th>
-                          </Table.Tr>
-                        </Table.Thead>
-                        <Table.Tbody>
-                          {MOCK_PROJECTS.map((proj) => (
-                            <Table.Tr key={proj.id}>
-                              <Table.Td>
-                                <Stack gap={2}>
-                                  <Text size="xs" fw={700} c="blue">{proj.name}</Text>
-                                  <Text size="9px" c="dimmed" style={{ fontFamily: 'monospace' }}>{proj.code}</Text>
-                                </Stack>
-                              </Table.Td>
-                              <Table.Td><Text size="xs">{proj.customer}</Text></Table.Td>
-                              <Table.Td><Text size="xs" c="dimmed" style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{proj.location}</Text></Table.Td>
-                              <Table.Td><Text size="xs">{proj.projectManager}</Text></Table.Td>
-                              <Table.Td>
-                                <Stack gap={2}>
-                                  <Text size="10px" fw={600}>Start: {proj.startDate}</Text>
-                                  <Text size="10px" c="orange">Target: {proj.expectedCompletion}</Text>
-                                </Stack>
-                              </Table.Td>
-                              <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={700} suppressHydrationWarning>₹{(proj.budgetAmount).toLocaleString('en-IN')}</Text></Table.Td>
-                              <Table.Td style={{ minWidth: 120 }}>
-                                <Group gap={4} mb={2} justify="between">
-                                  <Text size="10px" c="dimmed">Utilization Ratio</Text>
-                                  <Text size="10px" fw={700}>{proj.budgetUsedPct}%</Text>
-                                </Group>
-                                <Progress color={proj.budgetUsedPct > 90 ? 'red' : 'blue'} value={proj.budgetUsedPct} size="xs" radius="xl" />
-                              </Table.Td>
-                              <Table.Td>{renderStatusBadge(proj.status)}</Table.Td>
-                              <Table.Td>
-                                <Menu shadow="md" position="bottom-end">
-                                  <Menu.Target>
-                                    <ActionIcon variant="subtle" color="gray"><IconDotsVertical size={16} /></ActionIcon>
-                                  </Menu.Target>
-                                  <Menu.Dropdown>
-                                    <Menu.Item leftSection={<IconEye size={14} />} onClick={() => { setSelectedProjectId(proj.id); triggerStateRefresh('tracking'); }}>View Venture Workspace</Menu.Item>
-                                    <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => { setSelectedProjectId(proj.id); setCurrentView('edit'); }}>Modify Operational Scope</Menu.Item>
-                                    <Menu.Item leftSection={<IconArchive size={14} />} color="red">Archive Venture Trace</Menu.Item>
-                                  </Menu.Dropdown>
-                                </Menu>
-                              </Table.Td>
-                            </Table.Tr>
-                          ))}
-                        </Table.Tbody>
-                      </Table>
-                    </Table.ScrollContainer>
-                  )}
-
-                  <Divider my="sm" />
-                  <Group justify="between">
-                    <Text size="xs" c="dimmed">Showing 1-2 of 2 localized venture targets cataloged</Text>
-                    <Pagination total={1} size="sm" radius="sm" />
-                  </Group>
-                </Paper>
+        {/* ==========================================
+            TAB 4: PROJECT TRACKING
+           ========================================== */}
+        <Tabs.Panel value="tracking">
+          <Paper p="md" radius="md" mb="xl" withBorder>
+            <Group justify="space-between" align="center">
+              <Stack gap={4}>
+                <Title order={4}>Project Tracking Engine</Title>
+                <Text size="sm" c="dimmed">Review site milestones, timelines, and sign-off blockers.</Text>
               </Stack>
-            </Tabs.Panel>
+            </Group>
+          </Paper>
 
-            {/* ====================================================================
-                TAB 2 PANEL: BUDGET LEDGER OPTIMIZATION
-               ==================================================================== */}
-            <Tabs.Panel value="budget">
-              <Stack gap="md">
-                <Paper p="md" radius="md" withBorder>
-                  <Group justify="between">
-                    <div>
-                      <Text fw={700} size="sm" c="blue-dark">Active Capital Stream Focus Target</Text>
-                      <Text size="xs" c="dimmed">Displaying system-validated quotation values and downstream ledger transactions for: <b>{selectedProject.name}</b></Text>
-                    </div>
-                  </Group>
-                </Paper>
-
-                {isLoading ? (
-                  <Grid>
-                    <Grid.Col span={4}><Skeleton height={80} /></Grid.Col>
-                    <Grid.Col span={4}><Skeleton height={80} /></Grid.Col>
-                    <Grid.Col span={4}><Skeleton height={80} /></Grid.Col>
+          <Stack gap="md">
+            <Grid gap="md">
+              <Grid.Col span={{ base: 12, md: 7 }}>
+                <Paper p="md" radius="md" withBorder style={{ height: '100%' }}>
+                  <Text size="xs" fw={600} c="dimmed" mb="xs">PROJECT SUMMARY: {selectedProject.name}</Text>
+                  <Grid gap="xs" mt="xs">
+                    <Grid.Col span={6}><Text size="11px" c="dimmed">Customer:</Text><Text size="xs" fw={600}>{selectedProject.customer}</Text></Grid.Col>
+                    <Grid.Col span={6}><Text size="11px" c="dimmed">Status:</Text><div>{renderStatusBadge(selectedProject.status)}</div></Grid.Col>
+                    <Grid.Col span={6}><Text size="11px" c="dimmed">Timeline:</Text><Text size="xs" fw={600}>{selectedProject.startDate} to {selectedProject.expectedCompletion}</Text></Grid.Col>
+                    <Grid.Col span={6}><Text size="11px" c="dimmed">Approved Budget:</Text><Text size="xs" fw={600} suppressHydrationWarning>₹{selectedProject.budgetAmount.toLocaleString('en-IN')}</Text></Grid.Col>
                   </Grid>
-                ) : (
-                  <>
-                    {/* Metrics Dashboard Layout */}
-                    <Grid gap="md" align="stretch">
-                      <Grid.Col span={{ base: 12, md: 8 }}>
-                        <Grid gap="sm">
-                          {[
-                            { title: 'Approved Capital Pipeline Allocation', val: `₹${(selectedProject.budgetAmount).toLocaleString('en-IN')}`, desc: 'Aggregated base values pulled from Sales Module clearance.' },
-                            { title: 'Realized Outflow Burn Volume (Used)', val: `₹${((selectedProject.budgetAmount * selectedProject.budgetUsedPct) / 100).toLocaleString('en-IN')}`, color: 'orange', desc: 'Committed ledger settlements and stock consumption.' },
-                            { title: 'Liquid Unallocated Variance (Remaining)', val: `₹${(selectedProject.budgetAmount - (selectedProject.budgetAmount * selectedProject.budgetUsedPct) / 100).toLocaleString('en-IN')}`, color: 'green', desc: 'Free operational capital reserves available for site optimization.' }
-                          ].map((metric, idx) => (
-                            <Grid.Col span={{ base: 12, sm: 4 }} key={idx}>
-                              <Paper withBorder p="md" radius="md" style={{ height: '100%' }}>
-                                <Text size="10px" fw={700} c="dimmed" style={{ letterSpacing: '0.5px' }}>{metric.title.toUpperCase()}</Text>
-                                <Text size="lg" fw={700} c={metric.color} my={4} suppressHydrationWarning>{metric.val}</Text>
-                                <Text size="9px" c="dimmed">{metric.desc}</Text>
-                              </Paper>
-                            </Grid.Col>
-                          ))}
-                        </Grid>
-                      </Grid.Col>
 
-                      <Grid.Col span={{ base: 12, md: 4 }}>
-                        <Paper withBorder p="md" radius="md" style={{ display: 'flex', alignItems: 'center', justifyItem: 'center', height: '100%' }}>
-                          <Group justify="center" style={{ width: '100%' }}>
-                            <RingProgress
-                              size={110}
-                              thickness={12}
-                              roundCaps
-                              sections={[{ value: selectedProject.budgetUsedPct, color: selectedProject.budgetUsedPct > 80 ? 'red' : 'blue' }]}
-                              label={<Text size="xs" ta="center" fw={700}>{selectedProject.budgetUsedPct}% Burned</Text>}
-                            />
-                            <div>
-                              <Text size="xs" fw={700}>System Capital Run-Rate</Text>
-                              <Text size="9px" c="dimmed">Visualizing relative expenditure thresholds against master limits.</Text>
-                            </div>
-                          </Group>
-                        </Paper>
-                      </Grid.Col>
+                  <Divider my="md" />
+
+                  <Grid gap="sm">
+                    <Grid.Col span={6}>
+                      <Group justify="space-between" mb={2}><Text size="10px">Completion</Text><Text size="10px" fw={600}>74%</Text></Group>
+                      <Progress color="teal" value={74} size="sm" radius="xl" />
+                    </Grid.Col>
+                    <Grid.Col span={6}>
+                      <Group justify="space-between" mb={2}><Text size="10px">Budget Used</Text><Text size="10px" fw={600}>{selectedProject.budgetUsedPct}%</Text></Group>
+                      <Progress color="orange" value={selectedProject.budgetUsedPct} size="sm" radius="xl" />
+                    </Grid.Col>
+                  </Grid>
+                </Paper>
+              </Grid.Col>
+
+              <Grid.Col span={{ base: 12, md: 5 }}>
+                <Paper p="md" radius="md" withBorder style={{ height: '100%' }}>
+                  <Text size="xs" fw={600} c="dimmed" mb="sm">PROJECT STATUS CONTROL</Text>
+                  <Stack gap="xs">
+                    <Select size="xs" label="Current Stage" data={['Planning', 'Material Preparation', 'Execution', 'Completion']} defaultValue="Execution" />
+                    <TextInput size="xs" label="Action Required" defaultValue="Acquire MEP Clearance Sign-off" />
+                    <Grid gap="xs">
+                      <Grid.Col span={6}><TextInput size="xs" type="date" label="Next Review Date" defaultValue="2026-08-05" /></Grid.Col>
                     </Grid>
-
-                    {/* Breakdown Ledger Sub-Panels */}
-                    <Paper p="md" radius="md" withBorder>
-                      <Text fw={700} size="sm" mb="md">Categorized Operational Cost Center Variance Matrices</Text>
-                      <Grid gap="md">
-                        {[
-                          { title: 'Material Cost Allocation Pool', alloc: '₹80,00,000', consumption: '₹55,00,000', metric: 68 },
-                          { title: 'Subcontractor Main Work Contract Volume', alloc: '₹1,00,00,000', consumption: '₹75,00,000', metric: 75 },
-                          { title: 'Other Overheads & Site Contingencies', alloc: '₹20,00,000', consumption: '₹6,00,000', metric: 30 }
-                        ].map((row, i) => (
-                          <Grid.Col span={{ base: 12, md: 4 }} key={i}>
-                            <Paper p="sm" withBorder radius="md">
-                              <Text size="xs" fw={700}>{row.title}</Text>
-                              <Divider my="xs" />
-                              <Group justify="between" mb={4}><Text size="10px" c="dimmed">Approved Bounds:</Text><Text size="10px" fw={600} suppressHydrationWarning>{row.alloc}</Text></Group>
-                              <Group justify="between" mb={6}><Text size="10px" c="dimmed">Realized Consumed:</Text><Text size="10px" fw={600} c="orange" suppressHydrationWarning>{row.consumption}</Text></Group>
-                              <Progress size="xs" color="orange" value={row.metric} radius="xl" />
-                            </Paper>
-                          </Grid.Col>
-                        ))}
-                      </Grid>
-                    </Paper>
-
-                    {/* Transaction Audit Records */}
-                    <Paper p="md" radius="md" withBorder>
-                      <Text fw={700} size="sm" mb="sm">Audit Ledger Trail (Latest Project Inflows & Outflows)</Text>
-                      <Table.ScrollContainer minWidth={600}>
-                        <Table variant="striped" verticalSpacing="xs">
-                          <Table.Thead>
-                            <Table.Tr>
-                              <Table.Th>Transaction Timestamp</Table.Th>
-                              <Table.Th>Vector System Type</Table.Th>
-                              <Table.Th>Secure Reference Link</Table.Th>
-                              <Table.Th>Audit Trace Line Context</Table.Th>
-                              <Table.Th style={{ textAlign: 'right' }}>Settled Volume</Table.Th>
-                              <Table.Th>System State</Table.Th>
-                            </Table.Tr>
-                          </Table.Thead>
-                          <Table.Tbody>
-                            {MOCK_TRANSACTIONS.map((t, idx) => (
-                              <Table.Tr key={idx}>
-                                <Table.Td><Text size="xs">{t.date}</Text></Table.Td>
-                                <Table.Td><Badge size="xs" color="gray">{t.type}</Badge></Table.Td>
-                                <Table.Td><Text size="xs" style={{ fontFamily: 'monospace' }}>{t.ref}</Text></Table.Td>
-                                <Table.Td><Text size="xs" c="dimmed">{t.desc}</Text></Table.Td>
-                                <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={700} c="red" suppressHydrationWarning>- ₹{t.amount.toLocaleString('en-IN')}</Text></Table.Td>
-                                <Table.Td>{renderStatusBadge(t.status)}</Table.Td>
-                              </Table.Tr>
-                            ))}
-                          </Table.Tbody>
-                        </Table>
-                      </Table.ScrollContainer>
-                    </Paper>
-                  </>
-                )}
-              </Stack>
-            </Tabs.Panel>
-
-            {/* ====================================================================
-                TAB 3 PANEL: LOGISTICS STOCK ALLOCATIONS
-               ==================================================================== */}
-            <Tabs.Panel value="stock">
-              <Stack gap="md">
-                <Paper p="md" radius="md" withBorder>
-                  <Group justify="between" mb="md">
-                    <div>
-                      <Text fw={700} size="sm">Available Logistics Reserves Matrix</Text>
-                      <Text size="xs" c="dimmed">Query inventory balances maintained inside secure enterprise godown segments before executing site supply line movements.</Text>
-                    </div>
-                    <Button size="xs" color="blue" leftSection={<IconPlus size={14} />} onClick={() => setAllocateStockModal(true)}>Execute New Site Allocation</Button>
-                  </Group>
-
-                  {/* Available Stock Filters Sub-Segment */}
-                  <Grid gap="xs" mb="md">
-                    <Grid.Col span={{ base: 12, sm: 4 }}><TextInput size="xs" placeholder="Search item specs..." leftSection={<IconSearch size={12} />} /></Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 4 }}><Select size="xs" placeholder="Filter Category" data={['Metals & Hardware', 'Bulk Materials']} clearable /></Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 4 }}><Select size="xs" placeholder="Filter Godown Yard" data={['Structural Storage Facility B', 'Main Yards Warehouse A']} clearable /></Grid.Col>
-                  </Grid>
-
-                  <Table.ScrollContainer minWidth={600}>
-                    <Table variant="simple" verticalSpacing="sm">
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th>Inventory Item Class Reference</Table.Th>
-                          <Table.Th>Material Category</Table.Th>
-                          <Table.Th>Source Storage Godown</Table.Th>
-                          <Table.Th style={{ textAlign: 'right' }}>Liquid Balance Available</Table.Th>
-                          <Table.Th>Unit Metric</Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {MOCK_STOCK.map((item) => (
-                          <Table.Tr key={item.id}>
-                            <Table.Td><Text size="xs" fw={700}>{item.name}</Text></Table.Td>
-                            <Table.Td><Text size="xs">{item.category}</Text></Table.Td>
-                            <Table.Td><Text size="xs" c="dimmed">{item.godown}</Text></Table.Td>
-                            <Table.Td style={{ textAlign: 'right', color: 'var(--mantine-color-blue-7)' }}><Text size="xs" fw={700}>{item.qty}</Text></Table.Td>
-                            <Table.Td><Text size="xs" c="dimmed">{item.unit}</Text></Table.Td>
-                          </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
-                  </Table.ScrollContainer>
+                  </Stack>
                 </Paper>
+              </Grid.Col>
+            </Grid>
 
-                {/* Allocated Stock History Logs */}
-                <Paper p="md" radius="md" withBorder>
-                  <Text fw={700} size="sm" mb="sm">Historical Site Transfer Logs Archive</Text>
-                  <Table.ScrollContainer minWidth={600}>
-                    <Table variant="striped" verticalSpacing="xs">
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th>Target Project Frame</Table.Th>
-                          <Table.Th>Material Dispatched</Table.Th>
-                          <Table.Th style={{ textAlign: 'right' }}>Volume Dispatched</Table.Th>
-                          <Table.Th>Source Godown Origins</Table.Th>
-                          <Table.Th>Allocation Timestamp</Table.Th>
-                          <Table.Th>Ledger Status State</Table.Th>
-                          <Table.Th style={{ width: 80 }}></Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {MOCK_ALLOC_HISTORY.map((h, idx) => (
-                          <Table.Tr key={idx}>
-                            <Table.Td><Text size="xs" fw={600}>{h.project}</Text></Table.Td>
-                            <Table.Td><Text size="xs">{h.item}</Text></Table.Td>
-                            <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={700}>{h.qty}</Text></Table.Td>
-                            <Table.Td><Text size="xs" c="dimmed">{h.godown}</Text></Table.Td>
-                            <Table.Td><Text size="xs">{h.date}</Text></Table.Td>
-                            <Table.Td>{renderStatusBadge(h.status)}</Table.Td>
-                            <Table.Td>
-                              <Button size="9px" variant="light" color="orange">Return Stock</Button>
-                            </Table.Td>
-                          </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
-                  </Table.ScrollContainer>
-                </Paper>
-              </Stack>
-            </Tabs.Panel>
+            <Paper p="lg" radius="md" withBorder>
+              <Text fw={600} size="sm" mb="lg">Project Status Timeline</Text>
+              <Timeline active={2} bulletSize={22} lineWidth={2} radius="xl">
+                <Timeline.Item bullet={<IconCircleCheck size={12} />} title="Planning">
+                  <Text size="xs" c="dimmed">Approved architectural site profiles generated.</Text>
+                </Timeline.Item>
 
-            {/* ====================================================================
-                TAB 4 PANEL: VENTURE LIFECYCLE TRACKING
-               ==================================================================== */}
-            <Tabs.Panel value="tracking">
-              <Stack gap="md">
-                <Grid gap="md" align="stretch">
-                  {/* Detailed Venture Summary Parameters Card */}
-                  <Grid.Col span={{ base: 12, md: 7 }}>
-                    <Paper p="md" radius="md" withBorder style={{ height: '100%' }}>
-                      <Text size="xs" fw={700} c="dimmed" mb="xs">COMPREHENSIVE RUNTIME SUMMARY: {selectedProject.name.toUpperCase()}</Text>
-                      <Grid gap="xs" mt="sm">
-                        <Grid.Col span={6}><Text size="11px" c="dimmed">Associated Client Anchor:</Text><Text size="xs" fw={600}>{selectedProject.customer}</Text></Grid.Col>
-                        <Grid.Col span={6}><Text size="11px" c="dimmed">Operational Status Classification:</Text><div>{renderStatusBadge(selectedProject.status)}</div></Grid.Col>
-                        <Grid.Col span={6}><Text size="11px" c="dimmed">Venture Baseline Operations Window:</Text><Text size="xs" fw={600}>{selectedProject.startDate} to {selectedProject.expectedCompletion}</Text></Grid.Col>
-                        <Grid.Col span={6}><Text size="11px" c="dimmed">Venture Capital Base Structure:</Text><Text size="xs" fw={600} suppressHydrationWarning>₹{selectedProject.budgetAmount.toLocaleString('en-IN')}</Text></Grid.Col>
-                      </Grid>
+                <Timeline.Item bullet={<IconCircleCheck size={12} />} title="Material Preparation">
+                  <Text size="xs" c="dimmed">Initial bulk allocations routed.</Text>
+                </Timeline.Item>
 
-                      <Divider my="md" />
+                <Timeline.Item bullet={<IconFilter size={12} />} title="Execution">
+                  <Text size="xs" c="dimmed">Ongoing site civil work and pouring.</Text>
+                </Timeline.Item>
 
-                      <Text size="xs" fw={700} mb={6} c="dimmed">AGGREGATED RUNTIME RATIOS</Text>
-                      <Grid gap="sm">
-                        <Grid.Col span={6}>
-                          <Group justify="between" mb={2}><Text size="10px">Physical Completion Value</Text><Text size="10px" fw={700}>74%</Text></Group>
-                          <Progress color="teal" value={74} size="sm" radius="xl" />
-                        </Grid.Col>
-                        <Grid.Col span={6}>
-                          <Group justify="between" mb={2}><Text size="10px">Financial Burn Thresholds</Text><Text size="10px" fw={700}>{selectedProject.budgetUsedPct}%</Text></Group>
-                          <Progress color="orange" value={selectedProject.budgetUsedPct} size="sm" radius="xl" />
-                        </Grid.Col>
-                      </Grid>
-                    </Paper>
-                  </Grid.Col>
+                <Timeline.Item bullet={<IconLockSquare size={12} />} title="Completion">
+                  <Text size="xs" c="dimmed">Final handover and testing.</Text>
+                </Timeline.Item>
+              </Timeline>
+            </Paper>
 
-                  {/* Interactive Status Gate Execution Manager */}
-                  <Grid.Col span={{ base: 12, md: 5 }}>
-                    <Paper p="md" radius="md" withBorder style={{ height: '100%' }}>
-                      <Text size="xs" fw={700} c="dimmed" mb="sm">CRITICAL CRITERIA AND ACTION REGISTRY</Text>
-                      <Stack gap="xs">
-                        <Select size="xs" label="Active Phase Node Location" data={['Planning', 'Material Preparation', 'Execution', 'Completion']} defaultValue="Execution" />
-                        <TextInput size="xs" label="System Action Items Pending" defaultValue="Acquire MEP Clearance Sign-off from Municipal Architect" />
-                        <Grid gap="xs">
-                          <Grid.Col span={6}><TextInput size="xs" type="date" label="Next Board Review Gate" defaultValue="2026-08-05" /></Grid.Col>
-                          <Grid.Col span={6}><Select size="xs" label="Critical Severity Index" data={['High', 'Medium', 'Low']} defaultValue="Medium" /></Grid.Col>
-                        </Grid>
-                      </Stack>
-                    </Paper>
-                  </Grid.Col>
-                </Grid>
-
-                {/* Milestone Node Path Graphic Timeline */}
-                <Paper p="xl" radius="md" withBorder>
-                  <Text fw={700} size="sm" mb="xl">Venture Lifecycle Stage Gates Progress Path</Text>
-                  <Timeline active={2} bulletSize={24} lineWidth={2} radius="xl">
-                    <Timeline.Item bullet={<IconCircleCheck size={14} />} title="Phase 1: Conceptual Architecture & Planning">
-                      <Text size="xs" c="dimmed">Approved architectural site profiles generated. Baseline structural models passed into secondary system nodes.</Text>
-                      <Text size="10px" mt={4} fw={600}>Cleared: Feb 2026</Text>
-                    </Timeline.Item>
-
-                    <Timeline.Item bullet={<IconCircleCheck size={14} />} title="Phase 2: Logistics & Material Preparation">
-                      <Text size="xs" c="dimmed">Initial bulk allocations routed. Secondary supplier matrices synced with master godown structures.</Text>
-                      <Text size="10px" mt={4} fw={600}>Cleared: April 2026</Text>
-                    </Timeline.Item>
-
-                    <Timeline.Item bullet={<IconFilter size={14} />} title="Phase 3: Active Ground Execution Matrix">
-                      <Text size="xs" c="dimmed">Ongoing site civil pouring, structural beam installation, mechanical ducting routing, and core testing.</Text>
-                      <Badge color="blue" size="xs" variant="light" mt={4}>Active Node Process</Badge>
-                    </Timeline.Item>
-
-                    <Timeline.Item bullet={<IconLockSquare size={14} />} title="Phase 4: Final Inspection & Closeout Handover">
-                      <Text size="xs" c="dimmed">Asset commissioning, client sign-off verification, and financial clearance steps.</Text>
-                    </Timeline.Item>
-                  </Timeline>
-                </Paper>
-
-                {/* Granular Activity Action History Logs */}
-                <Paper p="md" radius="md" withBorder>
-                  <Text fw={700} size="sm" mb="sm">Site Operations Activity Logs (Latest Trace Entries)</Text>
-                  <Table.ScrollContainer minWidth={600}>
-                    <Table variant="striped" verticalSpacing="xs">
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th>Timestamp</Table.Th>
-                          <Table.Th>Logged Engineering Event</Table.Th>
-                          <Table.Th>Execution State</Table.Th>
-                          <Table.Th>Critical Mitigation Action Needed</Table.Th>
-                          <Table.Th>Responsible Owner</Table.Th>
-                          <Table.Th>System Remarks</Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {MOCK_ACTIVITIES.map((act, idx) => (
-                          <Table.Tr key={idx}>
-                            <Table.Td><Text size="xs">{act.date}</Text></Table.Td>
-                            <Table.Td><Text size="xs" fw={600}>{act.activity}</Text></Table.Td>
-                            <Table.Td>
-                              <Badge size="xs" variant="dot" color={act.status === 'Completed' ? 'green' : 'red'}>{act.status}</Badge>
-                            </Table.Td>
-                            <Table.Td>
-                              <Group gap={4}>
-                                {act.actionReq !== 'None' && <IconAlertTriangle size={12} color="var(--mantine-color-red-6)" />}
-                                <Text size="xs" c={act.actionReq !== 'None' ? 'red' : 'dimmed'}>{act.actionReq}</Text>
-                              </Group>
-                            </Table.Td>
-                            <Table.Td><Text size="xs">{act.owner}</Text></Table.Td>
-                            <Table.Td><Text size="xs" c="dimmed">{act.remarks}</Text></Table.Td>
-                          </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
-                  </Table.ScrollContainer>
-                </Paper>
-              </Stack>
-            </Tabs.Panel>
-
-          </div>
-        </Tabs>
-      )}
+            <Paper p="md" radius="md" withBorder>
+              <Text fw={600} size="sm" mb="sm">Project Activity History</Text>
+              <Table.ScrollContainer minWidth={600}>
+                <Table variant="striped" verticalSpacing="xs">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Date</Table.Th>
+                      <Table.Th>Activity</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                      <Table.Th>Action Required</Table.Th>
+                      <Table.Th>Responsible Person</Table.Th>
+                      <Table.Th>Remarks</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {MOCK_ACTIVITIES.map((act, idx) => (
+                      <Table.Tr key={idx}>
+                        <Table.Td><Text size="xs">{act.date}</Text></Table.Td>
+                        <Table.Td><Text size="xs" fw={600}>{act.activity}</Text></Table.Td>
+                        <Table.Td>
+                          <Badge size="xs" variant="dot" color={act.status === 'Completed' ? 'green' : 'red'}>{act.status}</Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Group gap={4}>
+                            {act.actionReq !== 'None' && <IconAlertTriangle size={12} color="var(--mantine-color-red-6)" />}
+                            <Text size="xs" c={act.actionReq !== 'None' ? 'red' : 'dimmed'}>{act.actionReq}</Text>
+                          </Group>
+                        </Table.Td>
+                        <Table.Td><Text size="xs">{act.owner}</Text></Table.Td>
+                        <Table.Td><Text size="xs" c="dimmed">{act.remarks}</Text></Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            </Paper>
+          </Stack>
+        </Tabs.Panel>
+      </Tabs>
 
       {/* ====================================================================
-          3. AUXILIARY MODAL SUB-COMPONENTS (SUB-CONTRACTOR ASSIGNMENTS)
+          3. DRAWER: CREATE / EDIT PROJECT (Hydration-safe title)
+         ==================================================================== */}
+      <Drawer
+        opened={projectDrawerOpened}
+        onClose={() => setProjectDrawerOpened(false)}
+        title={
+          <Text fw={700} size="lg">
+            {drawerMode === 'create' ? 'Create New Project' : `Edit: ${selectedProject.name}`}
+          </Text>
+        }
+        position="right"
+        size="lg"
+      >
+        <Stack gap="lg" style={{ paddingTop: 'var(--mantine-spacing-sm)' }}>
+          <Grid gap="md">
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <TextInput label="Project Name" placeholder="Enter project name" required defaultValue={drawerMode === 'edit' ? selectedProject.name : ''} />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <TextInput label="Project Code" disabled value={drawerMode === 'edit' ? selectedProject.code : 'PMS-GEN-2026-X'} />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <Select label="Customer" placeholder="Select customer" required data={['Phoenix Infra Corp', 'Nexus Living Spaces']} defaultValue={drawerMode === 'edit' ? selectedProject.customer : undefined} />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <Select label="Project Type" data={['Commercial Real Estate', 'Residential High-Rise']} defaultValue={drawerMode === 'edit' ? selectedProject.type : undefined} />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12 }}>
+              <TextInput label="Project Location" placeholder="Enter location" required defaultValue={drawerMode === 'edit' ? selectedProject.location : ''} />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <TextInput type="date" label="Start Date" defaultValue={drawerMode === 'edit' ? selectedProject.startDate : ''} />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <TextInput type="date" label="Expected Completion Date" defaultValue={drawerMode === 'edit' ? selectedProject.expectedCompletion : ''} />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12 }}>
+              <Select label="Project Manager" data={['Arjun Mehta', 'Sarah Dsouza']} defaultValue={drawerMode === 'edit' ? selectedProject.projectManager : undefined} />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12 }}>
+              <Textarea label="Description / Notes" minRows={3} defaultValue={drawerMode === 'edit' ? selectedProject.description : ''} />
+            </Grid.Col>
+          </Grid>
+
+          <Paper p="md" withBorder radius="md">
+            <Group justify="space-between" mb="sm">
+              <Text fw={600} size="sm">Sub-contractors</Text>
+              <Button size="xs" variant="outline" leftSection={<IconUserPlus size={14} />} onClick={() => setSubcontractorModal(true)}>Add Sub-contractor</Button>
+            </Group>
+
+            <Table.ScrollContainer minWidth={450}>
+              <Table variant="simple" verticalSpacing="sm">
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Name</Table.Th>
+                    <Table.Th>Category</Table.Th>
+                    <Table.Th>Status</Table.Th>
+                    <Table.Th style={{ width: 40 }}></Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {MOCK_SUBCONTRACTORS.map((sc) => (
+                    <Table.Tr key={sc.id}>
+                      <Table.Td><Text size="xs" fw={600}>{sc.name}</Text></Table.Td>
+                      <Table.Td><Text size="xs">{sc.category}</Text></Table.Td>
+                      <Table.Td>{renderStatusBadge(sc.status)}</Table.Td>
+                      <Table.Td>
+                        <ActionIcon variant="subtle" color="red" size="sm"><IconArchive size={14} /></ActionIcon>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          </Paper>
+
+          <Group justify="end" mt="md">
+            <Button variant="default" onClick={() => setProjectDrawerOpened(false)}>Cancel</Button>
+            <Button color="blue" onClick={() => setProjectDrawerOpened(false)}>Save Project</Button>
+          </Group>
+        </Stack>
+      </Drawer>
+
+      {/* ====================================================================
+          4. MODALS
          ==================================================================== */}
       <Modal
         opened={subcontractorModal}
         onClose={() => setSubcontractorModal(false)}
-        title="Route Subcontractor Operations Assignment Block"
+        title={<Text fw={600}>Add Sub-contractor</Text>}
         centered
         radius="md"
       >
         <Stack gap="sm">
-          <Select label="Select Subcontractor Corporate Group" placeholder="Select verified entity" data={['Vanguard Foundations', 'Sterling MEP Systems', 'Apex Glassworks']} required />
-          <Select label="Work Category Allocation" data={['Civil & Earthworks', 'Electrical & Plumbing', 'Façade Structures']} required />
-          <TextInput label="Contractual Scope Parameters" placeholder="Specify targeted bounds clearly" required />
-          <TextInput type="date" label="Contract Target Commencement Date" />
+          <Select label="Sub-contractor" placeholder="Select sub-contractor" data={['Vanguard Foundations', 'Sterling MEP Systems']} required />
+          <Select label="Work Category" data={['Civil & Earthworks', 'Electrical & Plumbing']} required />
+          <TextInput label="Scope of Work" placeholder="Specify scope" required />
+          <TextInput type="date" label="Assigned Date" />
           <Group justify="end" mt="md">
             <Button variant="default" size="xs" onClick={() => setSubcontractorModal(false)}>Cancel</Button>
-            <Button size="xs" color="blue" onClick={() => setSubcontractorModal(false)}>Commit Assignment</Button>
+            <Button size="xs" color="blue" onClick={() => setSubcontractorModal(false)}>Add</Button>
           </Group>
         </Stack>
       </Modal>
 
-      {/* ====================================================================
-          4. AUXILIARY MODAL SUB-COMPONENTS (LOGISTICS SUPPLY MOVEMENT)
-         ==================================================================== */}
       <Modal
         opened={allocateStockModal}
         onClose={() => setAllocateStockModal(false)}
-        title="Execute Inbound Site Supply Allocation Authorization"
+        title={<Text fw={600}>Allocate Stock</Text>}
         centered
         radius="md"
         size="lg"
       >
         <Stack gap="md">
-          <Paper p="sm" bg="var(--mantine-color-amber-0)" radius="md">
-            <Group gap="xs" align="start">
-              <IconAlertTriangle size={16} color="var(--mantine-color-amber-7)" style={{ marginTop: 2 }} />
-              <Text size="xs" c="amber-dark">Allocation parameters are evaluated immediately against real-time godown metric levels. You cannot override existing physical safety caps.</Text>
-            </Group>
-          </Paper>
-
           <Grid gap="sm">
-            <Grid.Col span={12}><Select size="sm" label="Target Project Frame Domain" value={selectedProjectId} data={MOCK_PROJECTS.map(p => ({ value: p.id, label: p.name }))} disabled /></Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}><Select size="sm" label="Source Dispatch Storage Godown" placeholder="Select pickup node" data={['Structural Storage Facility B', 'Main Yards Warehouse A']} required /></Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}><Select size="sm" label="Material Asset Selection" placeholder="Choose item" data={['High-Tensile Steel Rebar 500D', 'M30 Structural Concrete Mix']} required /></Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}><NumberInput size="sm" label="Available Quantities Checked" value={45} disabled description="Live database yard pull" /></Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}><NumberInput size="sm" label="Target Allocation Desired Volume" required min={1} max={45} placeholder="Must stay beneath yard levels" /></Grid.Col>
-            <Grid.Col span={12}><TextInput size="sm" placeholder="Enter vehicle log codes or logistics driver references" label="Venture Logistics Notes" /></Grid.Col>
+            <Grid.Col span={12}><Select size="sm" label="Project" value={selectedProjectId} data={MOCK_PROJECTS.map(p => ({ value: p.id, label: p.name }))} disabled /></Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}><Select size="sm" label="Source Godown" placeholder="Select godown" data={['Structural Storage Facility B', 'Main Yards Warehouse A']} required /></Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}><Select size="sm" label="Item" placeholder="Select item" data={['High-Tensile Steel Rebar 500D', 'M30 Structural Concrete Mix']} required /></Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}><NumberInput size="sm" label="Available Quantity" value={45} disabled /></Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}><NumberInput size="sm" label="Allocation Quantity" required min={1} max={45} /></Grid.Col>
+            <Grid.Col span={12}><TextInput size="sm" placeholder="Enter remarks" label="Remarks" /></Grid.Col>
           </Grid>
 
           <Group justify="end" mt="md">
-            <Button variant="default" size="sm" onClick={() => setAllocateStockModal(false)}>Abort Dispatches</Button>
-            <Button size="sm" color="blue" leftSection={<IconCalendar size={16} />} onClick={() => setAllocateStockModal(false)}>Authorize Dispatch Chain</Button>
+            <Button variant="default" size="sm" onClick={() => setAllocateStockModal(false)}>Cancel</Button>
+            <Button size="sm" color="blue" leftSection={<IconCalendar size={16} />} onClick={() => setAllocateStockModal(false)}>Allocate Stock</Button>
           </Group>
         </Stack>
       </Modal>

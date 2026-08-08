@@ -173,15 +173,22 @@ export default function SalesModule() {
             TAB 1: QUOTATIONS MODULE
            ========================================== */}
         <Tabs.Panel value="quotations">
-          <Group justify="between" mb="md">
-            <div>
-              <Title order={3}>Quotations Engine</Title>
-              <Text size="sm" c="dimmed">Track, adjust, and archive customer approval actions across commercial structures.</Text>
-            </div>
-            <Button leftSection={<IconPlus size={16} />} onClick={() => { setActiveQuotation(null); setFormOpen(true); }}>
-              Create Quotation
-            </Button>
-          </Group>
+          <Paper p="md" radius="md" mb="xl" withBorder>
+            <Group justify="space-between" align="center">
+              <Stack gap={4}>
+                <Title order={4}>Quotations Engine</Title>
+                <Text size="sm" c="dimmed">Track, adjust, and archive customer approval actions across commercial structures.</Text>
+              </Stack>
+              <Button 
+                size="sm"
+                color="indigo"
+                leftSection={<IconPlus size={16} />} 
+                onClick={() => { setActiveQuotation(null); setFormOpen(true); }}
+              >
+                Create Quotation
+              </Button>
+            </Group>
+          </Paper>
 
           {/* Filtering Layout Grid */}
           <Card withBorder radius="md" p="sm" mb="md">
