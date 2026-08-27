@@ -32,7 +32,7 @@ export default function LoginPage() {
     >
       <Card withBorder shadow="sm" p="xl" radius="md" style={{ width: 380 }}>
         <Stack gap="xs" align="center" mb="lg">
-          <Title order={2} style={{ color: 'var(--mantine-color-indigo-6)', letterSpacing: '-0.5px' }}>
+          <Title order={2} style={{ color: 'var(--mantine-color-brandOrange-6)', letterSpacing: '-0.5px' }}>
             BUILDERP
           </Title>
           <Text size="xs" c="dimmed" fw={500}>
@@ -58,7 +58,7 @@ export default function LoginPage() {
               required
             />
 
-            <Button type="submit" color="indigo" fullWidth mt="md" size="md">
+            <Button type="submit" color="brandOrange.6" fullWidth mt="md" size="md">
               Sign In
             </Button>
           </Stack>

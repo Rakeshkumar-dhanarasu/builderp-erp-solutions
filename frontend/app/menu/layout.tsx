@@ -14,6 +14,7 @@ import {
   Tooltip, 
   useMantineColorScheme, 
   useComputedColorScheme,
+  Image,
   Box // Added missing Box primitive import
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -28,7 +29,8 @@ import {
   IconMoon,
   IconChevronLeft,
   IconUsers,
-  IconChevronRight
+  IconChevronRight,
+  IconBuilding
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -63,7 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <AppShell
-      header={{ height: 60 }}
+      header={{ height: 100 }}
       navbar={{ 
         // Dynamic conditional sizing based on collapse toggle position
         width: desktopCollapsed ? 80 : 260, 
@@ -79,9 +81,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Group>
             <Burger opened={mobileOpened} onClick={toggleMobile} hiddenFrom="sm" size="sm" />
             <UnstyledButton component={Link} href="/menu">
-              <Text fw={800} size="xl" c="indigo">
-                BUILDERP
-              </Text>
+              {/* Group wrapper keeps the icon and text aligned */}
+              <Group gap="xs" align="center">
+                <Image src="/AlMahrooqi.png" alt="Al Mahrooqi Logo" w={90} h={90} fit="contain"/>
+                <Text fw={800} size="xl" c="brandOrange">
+                  Al Mahrooqi International LLC
+                </Text>
+              </Group>
             </UnstyledButton>
           </Group>
 
@@ -107,7 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Menu.Target>
                 <UnstyledButton>
                   <Group gap="xs">
-                    <Avatar radius="xl" color="indigo" name="John Doe" />
+                    <Avatar radius="xl" color="brandOrange" name="John Doe" />
                     <Text size="sm" fw={500} visibleFrom="sm">John Doe</Text>
                   </Group>
                 </UnstyledButton>
@@ -138,8 +144,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   gap: "12px",
                   padding: "10px 14px",
                   borderRadius: "8px",
-                  backgroundColor: pathname === "/menu" ? "var(--mantine-color-indigo-light)" : "transparent",
-                  color: pathname === "/menu" ? "var(--mantine-color-indigo-filled)" : "var(--mantine-color-text)",
+                  backgroundColor: pathname === "/menu" ? "var(--mantine-color-brandOrange-light)" : "transparent",
+                  color: pathname === "/menu" ? "var(--mantine-color-brandOrange-6)" : "var(--mantine-color-text)",
                 }}
               >
                 <IconLayoutDashboard size={20} stroke={1.5} style={{ minWidth: 20 }} />
@@ -164,8 +170,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       gap: "12px",
                       padding: "10px 14px",
                       borderRadius: "8px",
-                      backgroundColor: isActive ? "var(--mantine-color-indigo-light)" : "transparent",
-                      color: isActive ? "var(--mantine-color-indigo-filled)" : "var(--mantine-color-text)",
+                      backgroundColor: isActive ? "var(--mantine-color-brandOrange-light)" : "transparent",
+                      color: isActive ? "var(--mantine-color-brandOrange-6)" : "var(--mantine-color-text)",
                     }}
                   >
                     <Icon size={20} stroke={1.5} style={{ minWidth: 20 }} />

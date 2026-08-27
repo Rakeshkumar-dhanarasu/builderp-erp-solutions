@@ -100,7 +100,7 @@ export default function ReportsModule() {
       </Card>
 
       {/* Navigation Layer */}
-      <Tabs value={activeTab} onChange={setActiveTab} variant="pills" radius="md">
+      <Tabs value={activeTab} onChange={setActiveTab} color='#DC7B0A' variant="pills" radius="md">
         <Tabs.List mb="lg">
           <Tabs.Tab value="stakeholders" leftSection={<IconUsers size={16} />}>Stakeholder Reports</Tabs.Tab>
           <Tabs.Tab value="purchase" leftSection={<IconShoppingCart size={16} />}>Purchase Reports</Tabs.Tab>

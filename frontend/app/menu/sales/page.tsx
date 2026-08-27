@@ -25,7 +25,8 @@ import {
   FileInput,
   Paper,
   Divider,
-  Tooltip
+  Tooltip,
+  SimpleGrid
 } from '@mantine/core';
 import { 
   IconSearch, IconFilter, IconPlus, IconEye, IconEdit, IconUpload, 
@@ -76,7 +77,7 @@ const INITIAL_QUOTATIONS: Quotation[] = [
     project: 'Phoenix Commercial Complex',
     customer: 'Phoenix Infra Corp',
     version: 2,
-    totalValue: 2000000,
+    totalValue: 7836.22,
     createdDate: '2026-06-15',
     status: 'Accepted',
     validUntil: '2026-08-15',
@@ -96,7 +97,7 @@ const INITIAL_QUOTATIONS: Quotation[] = [
     project: 'Nexus Luxury Apartments',
     customer: 'Nexus Living Spaces',
     version: 1,
-    totalValue: 4500000,
+    totalValue: 176314.93,
     createdDate: '2026-07-01',
     status: 'Sent to Customer',
     validUntil: '2026-09-01',
@@ -181,7 +182,6 @@ export default function SalesModule() {
               </Stack>
               <Button 
                 size="sm"
-                color="indigo"
                 leftSection={<IconPlus size={16} />} 
                 onClick={() => { setActiveQuotation(null); setFormOpen(true); }}
               >
@@ -196,7 +196,7 @@ export default function SalesModule() {
               <Grid.Col span={{ base: 12, md: 4 }}><TextInput label="Search Ref" placeholder="Search customer, project..." leftSection={<IconSearch size={16} />} /></Grid.Col>
               <Grid.Col span={{ base: 12, sm: 4, md: 3 }}><Select label="Filter Status" placeholder="All Stages" data={['Draft', 'Sent', 'Accepted', 'Revision Required']} clearable /></Grid.Col>
               <Grid.Col span={{ base: 12, sm: 4, md: 3 }}><TextInput label="Lifecycle Boundary" type="date" leftSection={<IconCalendar size={16} />} /></Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 4, md: 2 }}><Button variant="light" fullWidth leftSection={<IconFilter size={16} />}>Apply</Button></Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 4, md: 2 }}><Button variant="light" color='brandOrange' fullWidth leftSection={<IconFilter size={16} />}>Apply</Button></Grid.Col>
             </Grid>
           </Card>
 
@@ -221,7 +221,7 @@ export default function SalesModule() {
                     <Table.Td>{q.customer}</Table.Td>
                     <Table.Td>{q.project}</Table.Td>
                     <Table.Td>v{q.version}</Table.Td>
-                    <Table.Td>₹{q.totalValue.toLocaleString('en-IN')}</Table.Td>
+                    <Table.Td>{new Intl.NumberFormat('en-OM', { style: 'currency', currency: 'OMR'}).format(q.totalValue)}</Table.Td>
                     <Table.Td>{getStatusBadge(q.status)}</Table.Td>
                     <Table.Td>
                       <Group gap={4} wrap="nowrap">
@@ -364,7 +364,7 @@ export default function SalesModule() {
             TAB 3: CLIENT PAYMENTS TRACKER
            ========================================== */}
         <Tabs.Panel value="payments">
-          <Group justify="between" mb="lg">
+          <Group justify="space-between" mb="lg">
             <div>
               <Title order={3}>Receivable Ledger Matrix</Title>
               <Text size="sm" c="dimmed">Cross-examine asset receipts against structural target intervals.</Text>
@@ -518,55 +518,27 @@ export default function SalesModule() {
          ========================================== */}
 
       {/* 1. Full Page Quotation Creation Workspace (Drawer) */}
-      <Drawer
+      <Modal
         opened={formOpen}
         onClose={() => setFormOpen(false)}
-        title={activeQuotation ? "Review System Quotation Record" : "Draft New System Quotation Component"}
+        title={activeQuotation ? "Revise Quotation" : "Draft New Quotation"}
         padding="xl"
-        size="100%"
-        position="right"
+        size="70%"
       >
         <Container size="lg">
           <Title order={3} mb="lg">Operational Quote Configuration</Title>
-          <Grid gap="md">
-            <Grid.Col span={{ base: 12, sm: 4 }}>
-              <TextInput 
-                label="Quotation Ref Number" 
-                value={activeQuotation?.qNumber || "QT-2026-AUTO"} 
-                disabled 
-              />
-            </Grid.Col>
+          <SimpleGrid cols={4} spacing='md'>
+              <TextInput label="Quotation Ref Number" value={activeQuotation?.qNumber || "QT-2026-AUTO"} disabled />
+              <Select label="Select Customer" value={activeQuotation?.customer || "Phoenix Infra Corp"}  data={['Phoenix Infra Corp', 'Nexus Living Spaces']} />
+              <TextInput label="Quotation Draft Date" type="date"  defaultValue={activeQuotation?.validUntil || "2026-08-15"} />
+              <TextInput label="Quotation Warranty Date" type="date"  defaultValue={activeQuotation?.validUntil || "2026-08-25"} />
+          </SimpleGrid>
 
-            {/* 2. Target Client Scope */}
-            <Grid.Col span={{ base: 12, sm: 4 }}>
-              <Select 
-                label="Target Client Scope" 
-                // If using @mantine/form, replace value/onChange with: {...form.getInputProps('customer')}
-                value={activeQuotation?.customer || "Phoenix Infra Corp"} 
-                data={['Phoenix Infra Corp', 'Nexus Living Spaces']} 
-              />
-            </Grid.Col>
+          <Textarea label="Customer Address" defaultValue={activeQuotation?.notes || ""} rows={1} disabled/>
 
-            {/* 3. Warranty Validation Limit (Date picker or native date string) */}
-            <Grid.Col span={{ base: 12, sm: 4 }}>
-              <TextInput 
-                label="Warranty Validation Limit" 
-                type="date" 
-                defaultValue={activeQuotation?.validUntil || "2026-08-15"} 
-              />
-            </Grid.Col>
-
-            {/* 4. Preamble Notes */}
-            <Grid.Col span={12}>
-              <Textarea 
-                label="Preamble Structural Context Notes" 
-                defaultValue={activeQuotation?.notes || ""} 
-                rows={3} 
-              />
-            </Grid.Col>
-          </Grid>
-
-          <Divider my="md" label="Itemized Line Schedule Configurations" labelPosition="center" />
+          <Divider my="md" />
+          <Textarea label="Quotation Subject" defaultValue={activeQuotation?.notes || ""} rows={3}/>
+          <Divider my="md" />
           
           <Table withTableBorder withColumnBorders mb="xl">
             <Table.Thead>
@@ -606,7 +578,7 @@ export default function SalesModule() {
             <Button color="green" leftSection={<IconCheck size={16} />} onClick={() => setFormOpen(false)}>Commit & Finalize Record</Button>
           </Group>
         </Container>
-      </Drawer>
+      </Modal>
 
       {/* 2. Manual External Validation Processing Terminal (Modal) */}
       <Modal
@@ -702,7 +674,7 @@ export default function SalesModule() {
         radius="md"
       >
         {selectedReceipt && (
-          <Paper p="xl" withBorder style={{ backgroundColor: '#fafafa', fontFamily: 'monospace' }}>
+          <Paper p="xl" withBorder style={{ fontFamily: 'monospace' }}>
             <Group justify="between" mb="xl">
               <div>
                 <Title order={4}>CASH CLEARANCE RECEIPT</Title>

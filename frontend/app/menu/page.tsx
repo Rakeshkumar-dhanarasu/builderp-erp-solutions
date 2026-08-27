@@ -24,7 +24,7 @@ export default function MainMenuDashboard() {
             {/* FIX: style={{ flex: 1 }} pushes the RingProgress completely to the right edge */}
             <div style={{ flex: 1 }}>
               <Group align="baseline" gap="xs">
-                <Text size="xl" fw={700} style={{ lineHeight: 1 }}>$428,500</Text>
+                <Text size="xl" fw={700} style={{ lineHeight: 1 }}>OMR 428,500</Text>
                 <Text size="sm" c="green" fw={500}>32% remaining</Text>
               </Group>
             </div>

@@ -50,11 +50,49 @@ import {
   IconDotsVertical,
   IconNotes,
   IconCurrencyDollar,
-  IconAlertCircle
+  IconAlertCircle,
+  IconBadge
 } from "@tabler/icons-react";
 
+import { CustomerForm } from '@/components/CreationForms/CustomerForm';
+import { SupplierForm } from '@/components/CreationForms/SupplierForm';
+import { SubContractorForm } from '@/components/CreationForms/SubContractorForm';
+import { EmployeeForm } from '@/components/CreationForms/EmployeeForm';
+import { DocumentUpload } from '@/components/FilesUpload';
+
+// Stakeholder Data Structure Interface Definition
+interface Stakeholder {
+  id: string;
+  type: "Customer" | "Supplier" | "Sub-contractor" | "Employee";
+  name: string;
+  contactPerson: string;
+  phone: string;
+  altPhone: string;
+  email: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  status: string;
+  createdDate: string;
+  notes: string;
+  paymentTerms: string;
+  dependentTransactions: number;
+  // Type-Specific Optional Attributes
+  customerCategory?: string;
+  creditLimit?: number;
+  SupplierCategory?: string;
+  materialServiceType?: string;
+  workCategory?: string;
+  specialization?: string;
+  role?: string;
+  department?: string;
+}
+
 // Multi-Tenant Unified Relational Enterprise Mock Schema
-const initialStakeholders = [
+const initialStakeholders: Stakeholder[] = [
   {
     id: "STK-C001",
     type: "Customer",
@@ -72,7 +110,6 @@ const initialStakeholders = [
     status: "Active",
     createdDate: "Feb 14, 2025",
     notes: "Primary Tier-1 infrastructure client. Fast track payment approvals verified.",
-    // Type-Specific Attributes
     customerCategory: "Commercial Developer",
     paymentTerms: "Net 30",
     creditLimit: 500000,
@@ -80,7 +117,7 @@ const initialStakeholders = [
   },
   {
     id: "STK-V002",
-    type: "Vendor",
+    type: "Supplier",
     name: "Titan ReadyMix & Aggregate",
     contactPerson: "Elena Rostova",
     phone: "+1 (555) 876-5432",
@@ -94,9 +131,8 @@ const initialStakeholders = [
     postalCode: "46401",
     status: "Active",
     createdDate: "May 22, 2025",
-    notes: "Preferred heavy concrete material vendor across midwest sector sites.",
-    // Type-Specific Attributes
-    vendorCategory: "Material Supplier",
+    notes: "Preferred heavy concrete material Supplier across midwest sector sites.",
+    SupplierCategory: "Material Supplier",
     materialServiceType: "High-Strength Structural Concrete",
     paymentTerms: "Net 45",
     dependentTransactions: 12
@@ -117,17 +153,39 @@ const initialStakeholders = [
     postalCode: "60173",
     status: "Inactive",
     createdDate: "Nov 08, 2025",
+
     notes: "Requires mandatory safety clearance re-certification before field deployment routing.",
-    // Type-Specific Attributes
     workCategory: "MEP Engineering",
     specialization: "Industrial Chillers & Cleanroom HVAC",
     paymentTerms: "Milestone-Based Progress",
     dependentTransactions: 0
+  },
+  {
+    id: "STK-E002",
+    type: "Employee",
+    name: "J Jonah Jameson",
+    contactPerson: "-",
+    role: "Project Engineer",
+    phone: "+91 67903 43084",
+    altPhone: "+91 93893 34929",
+    email: "jjonahjameson@gmail.com",
+    addressLine1: "4/A, Ritchie Street",
+    addressLine2: "",
+    city: "Chennai",
+    state: "Tamil Nadu",
+    country: "India",
+    postalCode: "601603",
+    status: "Active",
+    createdDate: "Jan 02, 2025",
+    notes: "Considering hike for this employee",
+    department: "Project Management",
+    paymentTerms: "Monthly Salary",
+    dependentTransactions: 3
   }
 ];
 
 export default function StakeholdersManagement() {
-  const [stakeholders, setStakeholders] = useState(initialStakeholders);
+  const [stakeholders, setStakeholders] = useState<Stakeholder[]>(initialStakeholders);
   const [activeTab, setActiveTab] = useState<string | null>("Customer");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>("All");
@@ -140,7 +198,7 @@ export default function StakeholdersManagement() {
 
   // Structural Form Payload Initialization State
   const [isEditing, setIsEditing] = useState(false);
-  const [targetStakeholder, setTargetStakeholder] = useState<typeof initialStakeholders[0] | null>(null);
+  const [targetStakeholder, setTargetStakeholder] = useState<Stakeholder | null>(null);
   const [formType, setFormType] = useState<string>("Customer");
   
   // Active selected row metadata lookup pointer
@@ -165,19 +223,19 @@ export default function StakeholdersManagement() {
     openDrawer();
   };
 
-  const handleOpenEdit = (stk: typeof initialStakeholders[0]) => {
+  const handleOpenEdit = (stk: Stakeholder) => {
     setIsEditing(true);
     setTargetStakeholder(stk);
     setFormType(stk.type);
     openDrawer();
   };
 
-  const handleOpenDeactivate = (stk: typeof initialStakeholders[0]) => {
+  const handleOpenDeactivate = (stk: Stakeholder) => {
     setTargetStakeholder(stk);
     openDeactivateModal();
   };
 
-  const handleOpenDelete = (stk: typeof initialStakeholders[0]) => {
+  const handleOpenDelete = (stk: Stakeholder) => {
     setTargetStakeholder(stk);
     openDeleteModal();
   };
@@ -203,11 +261,10 @@ export default function StakeholdersManagement() {
         <Group justify="space-between" align="center">
           <Stack gap={4}>
             <Title order={2}>Stakeholders Matrix</Title>
-            <Text size="sm" c="dimmed">Centralized coordination environment for corporate customers, raw material vendors, and trade sub-contractors.</Text>
+            <Text size="sm" c="dimmed">Centralized coordination environment for corporate customers, raw material Suppliers, trade sub-contractors, and internal employees.</Text>
           </Stack>
           <Button
             size="sm"
-            color="indigo"
             leftSection={<IconPlus size={16} />}
             onClick={handleOpenCreate}
           >
@@ -217,11 +274,12 @@ export default function StakeholdersManagement() {
       </Paper>
 
       {/* CORE OPERATIONAL TAB SEPARATION LAYER */}
-      <Tabs value={activeTab} onChange={(value) => { setActiveTab(value); setStatusFilter("All"); }} variant="pills">
+      <Tabs value={activeTab} onChange={(value) => { setActiveTab(value); setStatusFilter("All"); }} color='brandOrange' variant="pills">
         <Tabs.List>
           <Tabs.Tab value="Customer" leftSection={<IconUsers size={14} />}>Customers</Tabs.Tab>
-          <Tabs.Tab value="Vendor" leftSection={<IconBuildingStore size={14} />}>Vendors</Tabs.Tab>
+          <Tabs.Tab value="Supplier" leftSection={<IconBuildingStore size={14} />}>Suppliers</Tabs.Tab>
           <Tabs.Tab value="Sub-contractor" leftSection={<IconCone2 size={14} />}>Sub-contractors</Tabs.Tab>
+          <Tabs.Tab value="Employee" leftSection={<IconBadge size={14} />}>Employees</Tabs.Tab>
         </Tabs.List>
 
         <Grid columns={12} gap="md" mt="md">
@@ -258,10 +316,10 @@ export default function StakeholdersManagement() {
                     <Table.Thead style={{ background: "var(--mantine-color-default-hover)" }}>
                       <Table.Tr>
                         <Table.Th style={{ fontSize: '11px' }}>Entity Identity</Table.Th>
-                        <Table.Th style={{ fontSize: '11px' }}>Contact Coordinator</Table.Th>
+                        <Table.Th style={{ fontSize: '11px' }}>Contact / Role</Table.Th>
                         <Table.Th style={{ fontSize: '11px' }}>Communications Path</Table.Th>
                         <Table.Th style={{ fontSize: '11px' }}>Zone / City</Table.Th>
-                        <Table.Th style={{ fontSize: '11px' }}>State</Table.Th>
+                        <Table.Th style={{ fontSize: '11px' }}>Category / Dept</Table.Th>
                         <Table.Th style={{ fontSize: '11px', textAlign: "center" }}>Status</Table.Th>
                         <Table.Th style={{ fontSize: '11px', width: 50 }}></Table.Th>
                       </Table.Tr>
@@ -279,7 +337,7 @@ export default function StakeholdersManagement() {
                             key={stk.id}
                             style={{ 
                               cursor: "pointer",
-                              backgroundColor: stk.id === selectedStkId ? "var(--mantine-color-indigo-light)" : "transparent"
+                              backgroundColor: stk.id === selectedStkId ? "var(--mantine-color-brandOrange-light)" : "transparent"
                             }}
                             onClick={() => setSelectedStkId(stk.id)}
                           >
@@ -290,7 +348,7 @@ export default function StakeholdersManagement() {
                               </Stack>
                             </Table.Td>
                             <Table.Td>
-                              <Text size="xs" fw={500}>{stk.contactPerson}</Text>
+                              <Text size="xs" fw={500}>{stk.type === "Employee" ? (stk.role || "-") : stk.contactPerson}</Text>
                             </Table.Td>
                             <Table.Td>
                               <Stack gap={0}>
@@ -301,8 +359,9 @@ export default function StakeholdersManagement() {
                             <Table.Td><Text size="xs">{stk.city}</Text></Table.Td>
                             <Table.Td>
                               {activeTab === "Customer" && <Badge size="xs" variant="outline" color="blue">{stk.customerCategory}</Badge>}
-                              {activeTab === "Vendor" && <Badge size="xs" variant="outline" color="orange">{stk.vendorCategory}</Badge>}
+                              {activeTab === "Supplier" && <Badge size="xs" variant="outline" color="orange">{stk.SupplierCategory}</Badge>}
                               {activeTab === "Sub-contractor" && <Badge size="xs" variant="outline" color="teal">{stk.workCategory}</Badge>}
+                              {activeTab === "Employee" && <Badge size="xs" variant="outline" color="violet">{stk.department}</Badge>}
                             </Table.Td>
                             <Table.Td style={{ textAlign: "center" }}>
                               <Badge size="xs" color={stk.status === "Active" ? "teal" : "red"} variant="light">
@@ -342,7 +401,7 @@ export default function StakeholdersManagement() {
                 {/* HIGH MATRIX PAGINATION FOOTER CONTROL SYSTEM */}
                 <Group justify="space-between" mt="xs">
                   <Text size="11px" c="dimmed">Showing {filteredData.length} entries matching dynamic data state</Text>
-                  <Pagination total={1} size="xs" color="indigo" radius="sm" />
+                  <Pagination total={1} size="xs" radius="sm" />
                 </Group>
               </Stack>
             </Card>
@@ -353,19 +412,20 @@ export default function StakeholdersManagement() {
             <Stack gap="md">
               {activeStk ? (
                 <>
-                  <Card withBorder radius="md" p="sm" bg="var(--mantine-color-indigo-light)" style={{ borderLeft: "4px solid var(--mantine-color-indigo-filled)" }}>
+                  <Card withBorder radius="md" p="sm" bg="var(--mantine-color-brandOrange-light)" style={{ borderLeft: "4px solid var(--mantine-color-brandOrange-filled)" }}>
                     <Stack gap={4}>
                       <Group justify="space-between">
-                        <Text size="10px" fw={700} c="indigo" tt="uppercase">Transaction Ledger Lock</Text>
-                        <Badge size="xs" color="indigo">{activeStk.type}</Badge>
+                        <Text size="10px" fw={700} c="brandOrange" tt="uppercase">Transaction Ledger Lock</Text>
+                        <Badge size="xs" color="brandOrange">{activeStk.type}</Badge>
                       </Group>
-                      <Text size="sm" fw={700} c="indigo">{activeStk.name}</Text>
+                      <Text size="sm" fw={700} c="brandOrange">{activeStk.name}</Text>
                       <Group gap="xs" mt={4}>
-                        <ThemeIcon size="xs" color="indigo" variant="light"><IconCurrencyDollar size={10} /></ThemeIcon>
-                        <Text size="xs" fw={500} c="indigo">
+                        <ThemeIcon size="xs" color="brandOrange" variant="light"><IconCurrencyDollar size={10} /></ThemeIcon>
+                        <Text size="xs" fw={500} c="brandOrange">
                           {activeStk.type === "Customer" && `Credit Limit Bound: $${activeStk.creditLimit?.toLocaleString()}`}
-                          {activeStk.type === "Vendor" && `Material Sourcing: ${activeStk.materialServiceType}`}
+                          {activeStk.type === "Supplier" && `Material Sourcing: ${activeStk.materialServiceType}`}
                           {activeStk.type === "Sub-contractor" && `Specialization Node: ${activeStk.specialization}`}
+                          {activeStk.type === "Employee" && `Designation: ${activeStk.role} (${activeStk.department})`}
                         </Text>
                       </Group>
                     </Stack>
@@ -374,12 +434,12 @@ export default function StakeholdersManagement() {
                   <Card withBorder radius="md" p="sm">
                     <Stack gap="sm">
                       <Group gap="xs">
-                        <Avatar color="indigo" radius="md">
+                        <Avatar color="brandOrange" radius="md">
                           {activeStk.name.split(" ").map(n => n[0]).join("")}
                         </Avatar>
                         <div>
-                          <Text size="xs" fw={700}>{activeStk.contactPerson}</Text>
-                          <Text size="10px" c="dimmed">Assigned Point of Contact</Text>
+                          <Text size="xs" fw={700}>{activeStk.type === "Employee" ? activeStk.name : activeStk.contactPerson}</Text>
+                          <Text size="10px" c="dimmed">{activeStk.type === "Employee" ? activeStk.role : "Assigned Point of Contact"}</Text>
                         </div>
                       </Group>
 
@@ -426,7 +486,7 @@ export default function StakeholdersManagement() {
                   </Card>
                 </>
               ) : (
-                <Alert color="indigo" title="System Insight Grid">
+                <Alert title="System Insight Grid">
                   Select a specific stakeholder record line inside the central registry matrix tool to display live configuration schemas here.
                 </Alert>
               )}
@@ -436,116 +496,46 @@ export default function StakeholdersManagement() {
       </Tabs>
 
       {/* COMPREHENSIVE ADD / EDIT STAKEHOLDER SLIDE-OUT DRAWER */}
-      <Drawer
+      <Modal
         opened={drawerOpened}
         onClose={closeDrawer}
         title={
           <Text size="md" fw={700}>
-            {isEditing ? `Modify Structural Node: ${targetStakeholder?.id}` : "Configure New System Stakeholder Target"}
+            {isEditing ? `Edit Stakeholder Detail: ${targetStakeholder?.id}` : "Create New Stakeholder"}
           </Text>
         }
-        position="right"
-        size="100%"
+        size="70%"
+        centered
       >
         <Stack gap="md" component="form" onSubmit={(e) => { e.preventDefault(); closeDrawer(); }}>
           
           <Select
-            label="Stakeholder System Domain Taxonomy *"
-            description="Defines structural database field tracking rules dynamically"
-            data={["Customer", "Vendor", "Sub-contractor"]}
+            label="New Stakeholder Type"
+            data={["Customer", "Supplier", "Sub-contractor", "Employee"]}
             value={formType}
             onChange={(val) => val && setFormType(val)}
             disabled={isEditing}
             required
           />
 
-          <Divider label="Section A: Core Legal Information Mapping" labelPosition="left" />
+          {/* Dynamic Sub-Form Injection - Works exactly as before */}
+          {formType === "Customer" && <CustomerForm isEditing={isEditing} />}
+          {formType === "Supplier" && <SupplierForm isEditing={isEditing} />}
+          {formType === "Sub-contractor" && <SubContractorForm isEditing={isEditing} />}
+          {formType === "Employee" && <EmployeeForm isEditing={isEditing} />}
 
-          <SimpleGrid cols={2} spacing="xs">
-            <TextInput label="Corporate Registration Name *" placeholder="e.g., Vertex Infra Corp" required />
-            <TextInput label="Contact Coordinator Name *" placeholder="e.g., Jane Doe" required />
-          </SimpleGrid>
+          <Divider /> 
+          <DocumentUpload /> 
+          <Divider />
 
-          <SimpleGrid cols={3} spacing="xs">
-            <TextInput label="Primary Mobile Phone *" placeholder="+1 (555) 000-0000" required />
-            <TextInput label="Alternative Phone Link" placeholder="+1 (555) 000-0000" />
-            <TextInput label="Electronic Mail Path" placeholder="finance@firm.com" type="email" />
-          </SimpleGrid>
-
-          <Divider label="Section B: Logistics Logistics & Shipping Endpoints" labelPosition="left" />
-
-          <TextInput label="Address Line 1" placeholder="Street layout address tracking data" />
-          <TextInput label="Address Line 2" placeholder="Suite, floor, building warehouse tier identification" />
-
-          <SimpleGrid cols={4} spacing="xs">
-            <TextInput label="City" placeholder="Chicago" />
-            <TextInput label="State / Province" placeholder="IL" />
-            <TextInput label="Country Node" placeholder="USA" />
-            <TextInput label="Postal Code" placeholder="60001" />
-          </SimpleGrid>
-
-          <Divider label={`Section C: ${formType} Functional Configuration Matrix`} labelPosition="left" />
-
-          {/* DYNAMIC COMPONENT FIELD MATRIX GENERATOR */}
-          {formType === "Customer" && (
-            <SimpleGrid cols={3} spacing="xs">
-              <Select 
-                label="Customer Category" 
-                data={["Commercial Developer", "Government Infrastructure", "Private Residential", "Industrial Entity"]} 
-                defaultValue="Commercial Developer"
-              />
-              <Select 
-                label="Payment Terms" 
-                data={["Immediate Cash", "Net 15", "Net 30", "Net 60", "Letter of Credit"]} 
-                defaultValue="Net 30"
-              />
-              <NumberInput label="Credit Limit ($)" prefix="$ " min={0} defaultValue={100000} step={1000} />
-            </SimpleGrid>
-          )}
-
-          {formType === "Vendor" && (
-            <SimpleGrid cols={3} spacing="xs">
-              <Select 
-                label="Vendor Category" 
-                data={["Material Supplier", "Equipment Lessor", "Logistics Service Provider", "Utility Utility"]} 
-                defaultValue="Material Supplier"
-              />
-              <TextInput label="Material / Service Focus" placeholder="e.g., ReadyMix Concrete, Reinforced Rebar" />
-              <Select 
-                label="Payment Terms" 
-                data={["Advance Payment", "Net 30", "Net 45", "Net 60"]} 
-                defaultValue="Net 45"
-              />
-            </SimpleGrid>
-          )}
-
-          {formType === "Sub-contractor" && (
-            <SimpleGrid cols={3} spacing="xs">
-              <Select 
-                label="Work Category Domain" 
-                data={["Civil Engineering", "MEP Engineering", "Structural Framing", "Finishing Works"]} 
-                defaultValue="MEP Engineering"
-              />
-              <TextInput label="Trade Specialization" placeholder="e.g., Cleanroom Isolation Systems" />
-              <Select 
-                label="Payment Terms Allocation" 
-                data={["Milestone Progress Check", "Bi-Weekly Measured Works", "Net 30"]} 
-                defaultValue="Milestone Progress Check"
-              />
-            </SimpleGrid>
-          )}
-
-          <Divider label="Section D: Ledger Logging Meta Data" labelPosition="left" />
-
-          <Textarea label="Internal Transactional Notes & Core Remarks" placeholder="Input auditing context records manually..." rows={3} />
-          <Select label="Initial Activation Pipeline State" data={["Active", "Inactive"]} defaultValue="Active" />
+          <Textarea label="Additional Information" placeholder="Add additional information about the stakeholder here." rows={3} />
 
           <Group justify="flex-end" mt="md">
-            <Button variant="outline" color="gray" onClick={closeDrawer}>Cancel Workflow</Button>
-            <Button color="indigo" type="submit">Commit Structural Record</Button>
+            <Button variant="outline" onClick={closeDrawer}>Cancel</Button>
+            <Button type="submit">Add</Button>
           </Group>
         </Stack>
-      </Drawer>
+      </Modal>
 
       {/* OPERATIONAL SAFE DISPATCH DEACTIVATION WARNING MODAL */}
       <Modal

@@ -185,20 +185,13 @@ export default function ProjectManagementModule() {
             <Title order={2} className="enterprise-title">Project Lifecycle Engine</Title>
             <Text size="sm" c="dimmed">Track physical lifecycles, budget parameters, inventory drawdowns, and progress.</Text>
           </Stack>
-          <Select
-            label="Active Enterprise Project"
-            placeholder="Switch Scope"
-            value={selectedProjectId}
-            onChange={(val) => val && setSelectedProjectId(val)}
-            data={MOCK_PROJECTS.map(p => ({ value: p.id, label: p.name }))}
-          />
         </Group>
       </Paper>
 
       {/* ====================================================================
           2. MODULE TABS (Variant: pills, radius: md, mb: lg)
          ==================================================================== */}
-      <Tabs value={activeTab} onChange={triggerStateRefresh} variant="pills" radius="md">
+      <Tabs value={activeTab} onChange={triggerStateRefresh} color='brandOrange'variant="pills" radius="md">
         <Tabs.List mb="lg">
           <Tabs.Tab value="projects" leftSection={<IconFolder size={16} />}>Projects</Tabs.Tab>
           <Tabs.Tab value="budget" leftSection={<IconReportMoney size={16} />}>Budget Tracking</Tabs.Tab>
@@ -218,7 +211,7 @@ export default function ProjectManagementModule() {
               </Stack>
               <Button 
                 size="sm"
-                color="indigo"
+                color='brandOrange'
                 leftSection={<IconPlus size={16} />} 
                 onClick={handleOpenCreateDrawer}
               >
@@ -230,18 +223,73 @@ export default function ProjectManagementModule() {
           <Stack gap="md">
             {/* Filters */}
             <Paper p="sm" radius="md" withBorder>
-              <Grid gap="sm" align="end">
-                <Grid.Col span={{ base: 12, md: 4 }}>
-                  <TextInput placeholder="Search project name, customer, location..." leftSection={<IconSearch size={16} />} size="xs" />
+              <Grid gap="sm" align="flex-end">
+                {/* Col 1: Search */}
+                <Grid.Col span={{ base: 12, sm: 6, md: 2.4 }}>
+                  <TextInput
+                    label="Choose Project" 
+                    placeholder="Search projects..." 
+                    leftSection={<IconSearch size={16} />} 
+                    size="sm" 
+                  />
                 </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                  <MultiSelect placeholder="Project Status" data={['Not Started', 'In Progress', 'Completed', 'Delayed']} size="xs" />
+
+                {/* Col 2: Status MultiSelect */}
+                <Grid.Col span={{ base: 12, sm: 6, md: 2.4 }}>
+                  <MultiSelect
+                    label='Status' 
+                    placeholder="Project Status" 
+                    data={['Not Started', 'In Progress', 'Completed', 'Delayed']} 
+                    size="sm" 
+                  />
                 </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                  <Select placeholder="Customer" data={['Phoenix Infra Corp', 'Nexus Living Spaces']} clearable size="xs" />
+
+                {/* Col 3: Customer Select */}
+                <Grid.Col span={{ base: 12, sm: 6, md: 2.4 }}>
+                  <Select 
+                    label='Choose Customer'
+                    placeholder="Customer" 
+                    data={['Phoenix Infra Corp', 'Nexus Living Spaces']} 
+                    clearable 
+                    size="sm" 
+                  />
                 </Grid.Col>
-                <Grid.Col span={{ base: 12, md: 2 }}>
-                  <Button fullWidth variant="filled" color="blue" leftSection={<IconFilter size={14} />} size="xs">Filter</Button>
+
+                {/* Col 4: Date Range (Stacked together in 1 column) */}
+                <Grid.Col span={{ base: 12, sm: 6, md: 3.2 }}>
+                  <Grid gap="xs">
+                    <Grid.Col span={6}>
+                      <TextInput 
+                        label='Starting Date'
+                        type="date" 
+                        placeholder="From" 
+                        leftSection={<IconCalendar size={14} />} 
+                        size="sm" 
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={6}>
+                      <TextInput 
+                        label='Ending Date'
+                        type="date" 
+                        placeholder="To" 
+                        leftSection={<IconCalendar size={14} />} 
+                        size="sm" 
+                      />
+                    </Grid.Col>
+                  </Grid>
+                </Grid.Col>
+
+                {/* Col 5: Action Button */}
+                <Grid.Col span={{ base: 12, sm: 6, md: 1.6 }}>
+                  <Button 
+                    fullWidth 
+                    variant="filled" 
+                    color="brandOrange" 
+                    leftSection={<IconFilter size={14} />} 
+                    size="xs"
+                  >
+                    Filter
+                  </Button>
                 </Grid.Col>
               </Grid>
             </Paper>
@@ -275,20 +323,20 @@ export default function ProjectManagementModule() {
                         <Table.Tr key={proj.id}>
                           <Table.Td>
                             <Stack gap={2}>
-                              <Text size="xs" fw={600} c="blue">{proj.name}</Text>
+                              <Text size="sm" fw={600}>{proj.name}</Text>
                               <Text size="10px" c="dimmed">{proj.code}</Text>
                             </Stack>
                           </Table.Td>
-                          <Table.Td><Text size="xs">{proj.customer}</Text></Table.Td>
-                          <Table.Td><Text size="xs" c="dimmed">{proj.location}</Text></Table.Td>
-                          <Table.Td><Text size="xs">{proj.projectManager}</Text></Table.Td>
+                          <Table.Td><Text size="sm">{proj.customer}</Text></Table.Td>
+                          <Table.Td><Text size="sm" c="dimmed">{proj.location}</Text></Table.Td>
+                          <Table.Td><Text size="sm">{proj.projectManager}</Text></Table.Td>
                           <Table.Td>
                             <Stack gap={2}>
                               <Text size="10px">Start: {proj.startDate}</Text>
                               <Text size="10px" c="orange">Exp: {proj.expectedCompletion}</Text>
                             </Stack>
                           </Table.Td>
-                          <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600} suppressHydrationWarning>₹{(proj.budgetAmount).toLocaleString('en-IN')}</Text></Table.Td>
+                          <Table.Td style={{ textAlign: 'right' }}><Text size="sm" fw={600} suppressHydrationWarning>₹{(proj.budgetAmount).toLocaleString('en-IN')}</Text></Table.Td>
                           <Table.Td style={{ minWidth: 100 }}>
                             <Group gap={4} mb={2} justify="space-between">
                               <Text size="10px" fw={600}>{proj.budgetUsedPct}%</Text>
@@ -441,7 +489,7 @@ export default function ProjectManagementModule() {
               </Stack>
               <Button 
                 size="sm"
-                color="indigo"
+                color="brandOrange"
                 leftSection={<IconPlus size={16} />} 
                 onClick={() => setAllocateStockModal(true)}
               >
@@ -525,6 +573,14 @@ export default function ProjectManagementModule() {
                 <Title order={4}>Project Tracking Engine</Title>
                 <Text size="sm" c="dimmed">Review site milestones, timelines, and sign-off blockers.</Text>
               </Stack>
+
+              <Select
+                label="Active Enterprise Project"
+                placeholder="Switch Scope"
+                value={selectedProjectId}
+                onChange={(val) => val && setSelectedProjectId(val)}
+                data={MOCK_PROJECTS.map(p => ({ value: p.id, label: p.name }))}
+              />
             </Group>
           </Paper>
 
