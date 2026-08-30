@@ -181,7 +181,6 @@ export default function PurchaseManagementPage() {
           </Stack>
           <Button
             size="sm"
-            color="indigo"
             leftSection={<IconPlus size={16} />}
             onClick={openFormDrawer}
           >
@@ -191,13 +190,10 @@ export default function PurchaseManagementPage() {
       </Paper>
 
       {/* WORKFLOW SPLIT REVENUE NAVIGATION TAB CONTROLLERS */}
-      <Tabs variant="pills" value={activeModuleTab} onChange={setActiveModuleTab} color="indigo">
+      <Tabs variant="pills" value={activeModuleTab} onChange={setActiveModuleTab} >
         <Tabs.List>
           <Tabs.Tab value="po" leftSection={<IconFileText size={14} />}>Purchase Orders</Tabs.Tab>
           <Tabs.Tab value="tracking" leftSection={<IconTruckDelivery size={14} />}>Order Tracking Matrix</Tabs.Tab>
-          <Tabs.Tab value="vendor-pay" leftSection={<IconCreditCard size={14} />}>Vendor Payments</Tabs.Tab>
-          <Tabs.Tab value="sub-pay" leftSection={<IconCone2 size={14} />}>Sub-contractor Payments</Tabs.Tab>
-          <Tabs.Tab value="receipts" leftSection={<IconReceipt size={14} />}>Payment Receipts Logs</Tabs.Tab>
         </Tabs.List>
 
         {/* TAB 1 & 2 ROUTING CONTEXT (PURCHASE ORDERS & DISPATCH LOOKUP TRACKING) */}
@@ -255,7 +251,7 @@ export default function PurchaseManagementPage() {
                             key={po.id}
                             style={{
                               cursor: "pointer",
-                              backgroundColor: po.id === selectedPoId ? "var(--mantine-color-indigo-light)" : "transparent"
+                              backgroundColor: po.id === selectedPoId ? "var(--mantine-color-brandOrange-light)" : "transparent"
                             }}
                             onClick={() => setSelectedPoId(po.id)}
                           >
@@ -294,7 +290,7 @@ export default function PurchaseManagementPage() {
                   </Card>
                   <Group justify="space-between" mt="xs">
                     <Text size="11px" c="dimmed">Displaying baseline system transactional values matching engine schema memory bounds</Text>
-                    <Pagination total={1} size="xs" color="indigo" radius="sm" />
+                    <Pagination total={1} size="xs" color="brandOrange" radius="sm" />
                   </Group>
                 </Stack>
               </Card>
@@ -304,10 +300,10 @@ export default function PurchaseManagementPage() {
             <Grid.Col span={{ base: 12, md: 4 }}>
               {currentPoFocus ? (
                 <Stack gap="sm">
-                  <Card withBorder radius="md" p="sm" bg="var(--mantine-color-indigo-light)" style={{ borderLeft: "4px solid var(--mantine-color-indigo-filled)" }}>
+                  <Card withBorder radius="md" p="sm" bg="var(--mantine-color-brandOrange-light)" style={{ borderLeft: "4px solid var(--mantine-color-brandOrange-filled)" }}>
                     <Stack gap={2}>
-                      <Text size="10px" fw={700} c="indigo" tt="uppercase">Live Track Inspect Framework</Text>
-                      <Text size="sm" fw={800} c="indigo">{currentPoFocus.id}</Text>
+                      <Text size="10px" fw={700} c="brandOrange" tt="uppercase">Live Track Inspect Framework</Text>
+                      <Text size="sm" fw={800} c="brandOrange">{currentPoFocus.id}</Text>
                       <Text size="xs" fw={500} c="dimmed">{currentPoFocus.partyName}</Text>
                     </Stack>
                   </Card>
@@ -418,119 +414,6 @@ export default function PurchaseManagementPage() {
                           </Button>
                         </Group>
                       </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Stack>
-          </Card>
-        </Tabs.Panel>
-
-        {/* TAB 3: VENDOR PAYMENTS OUTBOUND CONTROL */}
-        <Tabs.Panel value="vendor-pay" mt="md">
-          <Card withBorder radius="md" p="sm">
-            <Stack gap="sm">
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase">Vendor Capital Outflows Ledger</Text>
-              <Table horizontalSpacing="xs" verticalSpacing="xs" withTableBorder>
-                <Table.Thead style={{ background: "var(--mantine-color-default-hover)" }}>
-                  <Table.Tr>
-                    <Table.Th style={{ fontSize: '11px' }}>Payment ID</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Vendor Business Entity</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Linked PO Reference</Table.Th>
-                    <Table.Th style={{ fontSize: '11px', textAlign: 'right' }}>Order Commitment</Table.Th>
-                    <Table.Th style={{ fontSize: '11px', textAlign: 'right' }}>Disbursed Liquidity</Table.Th>
-                    <Table.Th style={{ fontSize: '11px', textAlign: 'right' }}>Outstanding Obligation</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Value Timestamp</Table.Th>
-                    <Table.Th style={{ fontSize: '11px', textAlign: 'center' }}>State</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {mockVendorPayments.map((v) => (
-                    <Table.Tr key={v.id}>
-                      <Table.Td><Text size="xs" fw={700}>{v.id}</Text></Table.Td>
-                      <Table.Td><Text size="xs" fw={600}>{v.vendorName}</Text></Table.Td>
-                      <Table.Td><Text size="xs" c="indigo" fw={600}>{v.poNumber}</Text></Table.Td>
-                      <Table.Td style={{ textAlign: 'right' }}><Text size="xs">${v.orderAmount.toLocaleString()}</Text></Table.Td>
-                      <Table.Td style={{ textAlign: 'right' }}><Text size="xs" c="teal" fw={600}>${v.paidAmount.toLocaleString()}</Text></Table.Td>
-                      <Table.Td style={{ textAlign: 'right' }}><Text size="xs" c="red" fw={600}>${v.dueAmount.toLocaleString()}</Text></Table.Td>
-                      <Table.Td><Text size="xs">{v.paymentDate}</Text></Table.Td>
-                      <Table.Td style={{ textAlign: 'center' }}><OrderStatusBadge status={v.status} /></Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Stack>
-          </Card>
-        </Tabs.Panel>
-
-        {/* TAB 4: SUB-CONTRACTOR PROGRESS ENGINEERING DISBURSEMENTS */}
-        <Tabs.Panel value="sub-pay" mt="md">
-          <Card withBorder radius="md" p="sm">
-            <Stack gap="sm">
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase">Trade Contract Sub-Contractor Valuation Matrix</Text>
-              <Table horizontalSpacing="xs" verticalSpacing="xs" withTableBorder>
-                <Table.Thead style={{ background: "var(--mantine-color-default-hover)" }}>
-                  <Table.Tr>
-                    <Table.Th style={{ fontSize: '11px' }}>Disbursement ID</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Sub-Contractor Entity</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Linked Work Order</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Project Allocation Context</Table.Th>
-                    <Table.Th style={{ fontSize: '11px', textAlign: 'right' }}>Contract Baseline Valuation</Table.Th>
-                    <Table.Th style={{ fontSize: '11px', textAlign: 'right' }}>Released Capital</Table.Th>
-                    <Table.Th style={{ fontSize: '11px', textAlign: 'right' }}>Retention Balance Due</Table.Th>
-                    <Table.Th style={{ fontSize: '11px', textAlign: 'center' }}>State Class</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {mockSubPayments.map((s) => (
-                    <Table.Tr key={s.id}>
-                      <Table.Td><Text size="xs" fw={700}>{s.id}</Text></Table.Td>
-                      <Table.Td><Text size="xs" fw={600}>{s.subName}</Text></Table.Td>
-                      <Table.Td><Text size="xs" c="orange" fw={600}>{s.woNumber}</Text></Table.Td>
-                      <Table.Td><Text size="xs" c="dimmed">{s.project}</Text></Table.Td>
-                      <Table.Td style={{ textAlign: 'right' }}><Text size="xs">${s.contractAmount.toLocaleString()}</Text></Table.Td>
-                      <Table.Td style={{ textAlign: 'right' }}><Text size="xs" c="teal" fw={600}>${s.paidAmount.toLocaleString()}</Text></Table.Td>
-                      <Table.Td style={{ textAlign: 'right' }}><Text size="xs" c="red" fw={600}>${s.dueAmount.toLocaleString()}</Text></Table.Td>
-                      <Table.Td style={{ textAlign: 'center' }}><OrderStatusBadge status={s.status} /></Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Stack>
-          </Card>
-        </Tabs.Panel>
-
-        {/* TAB 5: AUDIT LOG TRANSACTION PAYMENT RECEIPTS RECORDINGS */}
-        <Tabs.Panel value="receipts" mt="md">
-          <Card withBorder radius="md" p="sm">
-            <Stack gap="sm">
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase">Immutable Central Cash Book Receipts Register</Text>
-              <Table horizontalSpacing="xs" verticalSpacing="xs" withTableBorder>
-                <Table.Thead style={{ background: "var(--mantine-color-default-hover)" }}>
-                  <Table.Tr>
-                    <Table.Th style={{ fontSize: '11px' }}>Receipt Index Key</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Counterparty Legal Name</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Class Classification</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Reference Binding Key</Table.Th>
-                    <Table.Th style={{ fontSize: '11px', textAlign: 'right' }}>Executed Value Volume</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Settlement Date</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Banking Channel Mode</Table.Th>
-                    <Table.Th style={{ fontSize: '11px' }}>Auditing Operator Token</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {mockReceipts.map((r) => (
-                    <Table.Tr key={r.id}>
-                      <Table.Td><Text size="xs" fw={700}>{r.id}</Text></Table.Td>
-                      <Table.Td><Text size="xs" fw={600}>{r.partyName}</Text></Table.Td>
-                      <Table.Td>
-                        <Badge size="xs" variant="dot" color={r.type === "Vendor" ? "blue" : "orange"}>{r.type}</Badge>
-                      </Table.Td>
-                      <Table.Td><Text size="xs" style={{ fontFamily: 'monospace' }}>{r.referenceOrder}</Text></Table.Td>
-                      <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={700} c="teal">${r.amount.toLocaleString()}</Text></Table.Td>
-                      <Table.Td><Text size="xs">{r.paymentDate}</Text></Table.Td>
-                      <Table.Td><Text size="xs" fw={500}>{r.mode}</Text></Table.Td>
-                      <Table.Td><Text size="10px" c="dimmed">{r.createdBy}</Text></Table.Td>
                     </Table.Tr>
                   ))}
                 </Table.Tbody>

@@ -135,10 +135,9 @@ export default function ProjectManagementModule() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Modals & Drawers
-  const [projectDrawerOpened, setProjectDrawerOpened] = useState<boolean>(false);
-  const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
+  const [projectModalOpened, setprojectModalOpened] = useState<boolean>(false);
+  const [modalMode, setmodalMode] = useState<'create' | 'edit'>('create');
   const [subcontractorModal, setSubcontractorModal] = useState<boolean>(false);
-  const [allocateStockModal, setAllocateStockModal] = useState<boolean>(false);
 
   const triggerStateRefresh = (targetTab: string | null) => {
     setActiveTab(targetTab);
@@ -147,15 +146,15 @@ export default function ProjectManagementModule() {
     return () => clearTimeout(delay);
   };
 
-  const handleOpenCreateDrawer = () => {
-    setDrawerMode('create');
-    setProjectDrawerOpened(true);
+  const handleOpenCreateModal = () => {
+    setmodalMode('create');
+    setprojectModalOpened(true);
   };
 
-  const handleOpenEditDrawer = (projId: string) => {
+  const handleOpenEditModal = (projId: string) => {
     setSelectedProjectId(projId);
-    setDrawerMode('edit');
-    setProjectDrawerOpened(true);
+    setmodalMode('edit');
+    setprojectModalOpened(true);
   };
 
   const selectedProject = MOCK_PROJECTS.find(p => p.id === selectedProjectId) || MOCK_PROJECTS[0];
@@ -193,9 +192,8 @@ export default function ProjectManagementModule() {
          ==================================================================== */}
       <Tabs value={activeTab} onChange={triggerStateRefresh} color='brandOrange'variant="pills" radius="md">
         <Tabs.List mb="lg">
-          <Tabs.Tab value="projects" leftSection={<IconFolder size={16} />}>Projects</Tabs.Tab>
+          <Tabs.Tab value="projects" leftSection={<IconFolder size={16} />}>Project List</Tabs.Tab>
           <Tabs.Tab value="budget" leftSection={<IconReportMoney size={16} />}>Budget Tracking</Tabs.Tab>
-          <Tabs.Tab value="stock" leftSection={<IconBoxSeam size={16} />}>Stock Allocation</Tabs.Tab>
           <Tabs.Tab value="tracking" leftSection={<IconTrack size={16} />}>Project Tracking</Tabs.Tab>
         </Tabs.List>
 
@@ -213,7 +211,7 @@ export default function ProjectManagementModule() {
                 size="sm"
                 color='brandOrange'
                 leftSection={<IconPlus size={16} />} 
-                onClick={handleOpenCreateDrawer}
+                onClick={handleOpenCreateModal}
               >
                 Create Project
               </Button>
@@ -283,7 +281,7 @@ export default function ProjectManagementModule() {
                 <Grid.Col span={{ base: 12, sm: 6, md: 1.6 }}>
                   <Button 
                     fullWidth 
-                    variant="filled" 
+                    variant="light" 
                     color="brandOrange" 
                     leftSection={<IconFilter size={14} />} 
                     size="xs"
@@ -351,7 +349,7 @@ export default function ProjectManagementModule() {
                               </Menu.Target>
                               <Menu.Dropdown>
                                 <Menu.Item leftSection={<IconEye size={14} />} onClick={() => { setSelectedProjectId(proj.id); triggerStateRefresh('tracking'); }}>View Project</Menu.Item>
-                                <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => handleOpenEditDrawer(proj.id)}>Edit Project</Menu.Item>
+                                <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => handleOpenEditModal(proj.id)}>Edit Project</Menu.Item>
                                 <Menu.Item leftSection={<IconArchive size={14} />} color="red">Archive Project</Menu.Item>
                               </Menu.Dropdown>
                             </Menu>
@@ -475,96 +473,10 @@ export default function ProjectManagementModule() {
               </>
             )}
           </Stack>
-        </Tabs.Panel>
+        </Tabs.Panel>        
 
         {/* ==========================================
-            TAB 3: STOCK ALLOCATION
-           ========================================== */}
-        <Tabs.Panel value="stock">
-          <Paper p="md" radius="md" mb="xl" withBorder>
-            <Group justify="space-between" align="center">
-              <Stack gap={4}>
-                <Title order={4}>Stock Allocation Engine</Title>
-                <Text size="sm" c="dimmed">Allocate godown inventory directly to active construction sites.</Text>
-              </Stack>
-              <Button 
-                size="sm"
-                color="brandOrange"
-                leftSection={<IconPlus size={16} />} 
-                onClick={() => setAllocateStockModal(true)}
-              >
-                Allocate Stock
-              </Button>
-            </Group>
-          </Paper>
-
-          <Stack gap="md">
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={600} size="sm" mb="md">Available Stock View</Text>
-              <Table.ScrollContainer minWidth={600}>
-                <Table variant="simple" verticalSpacing="sm">
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>Item Name</Table.Th>
-                      <Table.Th>Category</Table.Th>
-                      <Table.Th>Godown</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>Available Quantity</Table.Th>
-                      <Table.Th>Unit</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {MOCK_STOCK.map((item) => (
-                      <Table.Tr key={item.id}>
-                        <Table.Td><Text size="xs" fw={600}>{item.name}</Text></Table.Td>
-                        <Table.Td><Text size="xs">{item.category}</Text></Table.Td>
-                        <Table.Td><Text size="xs" c="dimmed">{item.godown}</Text></Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600}>{item.qty}</Text></Table.Td>
-                        <Table.Td><Text size="xs" c="dimmed">{item.unit}</Text></Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={600} size="sm" mb="sm">Allocated Stock History</Text>
-              <Table.ScrollContainer minWidth={600}>
-                <Table variant="striped" verticalSpacing="xs">
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>Project</Table.Th>
-                      <Table.Th>Item</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>Quantity Allocated</Table.Th>
-                      <Table.Th>Godown</Table.Th>
-                      <Table.Th>Allocation Date</Table.Th>
-                      <Table.Th>Status</Table.Th>
-                      <Table.Th style={{ width: 80 }}></Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {MOCK_ALLOC_HISTORY.map((h, idx) => (
-                      <Table.Tr key={idx}>
-                        <Table.Td><Text size="xs" fw={600}>{h.project}</Text></Table.Td>
-                        <Table.Td><Text size="xs">{h.item}</Text></Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600}>{h.qty}</Text></Table.Td>
-                        <Table.Td><Text size="xs" c="dimmed">{h.godown}</Text></Table.Td>
-                        <Table.Td><Text size="xs">{h.date}</Text></Table.Td>
-                        <Table.Td>{renderStatusBadge(h.status)}</Table.Td>
-                        <Table.Td>
-                          <Button size="9px" variant="light" color="orange">Return Stock</Button>
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
-            </Paper>
-          </Stack>
-        </Tabs.Panel>
-
-        {/* ==========================================
-            TAB 4: PROJECT TRACKING
+            TAB 3: PROJECT TRACKING
            ========================================== */}
         <Tabs.Panel value="tracking">
           <Paper p="md" radius="md" mb="xl" withBorder>
@@ -689,45 +601,44 @@ export default function ProjectManagementModule() {
       {/* ====================================================================
           3. DRAWER: CREATE / EDIT PROJECT (Hydration-safe title)
          ==================================================================== */}
-      <Drawer
-        opened={projectDrawerOpened}
-        onClose={() => setProjectDrawerOpened(false)}
+      <Modal
+        opened={projectModalOpened}
+        onClose={() => setprojectModalOpened(false)}
         title={
           <Text fw={700} size="lg">
-            {drawerMode === 'create' ? 'Create New Project' : `Edit: ${selectedProject.name}`}
+            {modalMode === 'create' ? 'Create New Project' : `Edit: ${selectedProject.name}`}
           </Text>
         }
-        position="right"
-        size="lg"
+        size="70%"
       >
         <Stack gap="lg" style={{ paddingTop: 'var(--mantine-spacing-sm)' }}>
           <Grid gap="md">
             <Grid.Col span={{ base: 12, md: 6 }}>
-              <TextInput label="Project Name" placeholder="Enter project name" required defaultValue={drawerMode === 'edit' ? selectedProject.name : ''} />
+              <TextInput label="Project Name" placeholder="Enter project name" required defaultValue={modalMode === 'edit' ? selectedProject.name : ''} />
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 6 }}>
-              <TextInput label="Project Code" disabled value={drawerMode === 'edit' ? selectedProject.code : 'PMS-GEN-2026-X'} />
+              <TextInput label="Project Code" disabled value={modalMode === 'edit' ? selectedProject.code : 'PMS-GEN-2026-X'} />
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 6 }}>
-              <Select label="Customer" placeholder="Select customer" required data={['Phoenix Infra Corp', 'Nexus Living Spaces']} defaultValue={drawerMode === 'edit' ? selectedProject.customer : undefined} />
+              <Select label="Customer" placeholder="Select customer" required data={['Phoenix Infra Corp', 'Nexus Living Spaces']} defaultValue={modalMode === 'edit' ? selectedProject.customer : undefined} />
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 6 }}>
-              <Select label="Project Type" data={['Commercial Real Estate', 'Residential High-Rise']} defaultValue={drawerMode === 'edit' ? selectedProject.type : undefined} />
+              <Select label="Project Type" data={['Commercial Real Estate', 'Residential High-Rise']} defaultValue={modalMode === 'edit' ? selectedProject.type : undefined} />
             </Grid.Col>
             <Grid.Col span={{ base: 12 }}>
-              <TextInput label="Project Location" placeholder="Enter location" required defaultValue={drawerMode === 'edit' ? selectedProject.location : ''} />
+              <TextInput label="Project Location" placeholder="Enter location" required defaultValue={modalMode === 'edit' ? selectedProject.location : ''} />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6 }}>
-              <TextInput type="date" label="Start Date" defaultValue={drawerMode === 'edit' ? selectedProject.startDate : ''} />
+              <TextInput type="date" label="Start Date" defaultValue={modalMode === 'edit' ? selectedProject.startDate : ''} />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6 }}>
-              <TextInput type="date" label="Expected Completion Date" defaultValue={drawerMode === 'edit' ? selectedProject.expectedCompletion : ''} />
+              <TextInput type="date" label="Expected Completion Date" defaultValue={modalMode === 'edit' ? selectedProject.expectedCompletion : ''} />
             </Grid.Col>
             <Grid.Col span={{ base: 12 }}>
-              <Select label="Project Manager" data={['Arjun Mehta', 'Sarah Dsouza']} defaultValue={drawerMode === 'edit' ? selectedProject.projectManager : undefined} />
+              <Select label="Project Manager" data={['Arjun Mehta', 'Sarah Dsouza']} defaultValue={modalMode === 'edit' ? selectedProject.projectManager : undefined} />
             </Grid.Col>
             <Grid.Col span={{ base: 12 }}>
-              <Textarea label="Description / Notes" minRows={3} defaultValue={drawerMode === 'edit' ? selectedProject.description : ''} />
+              <Textarea label="Description / Notes" minRows={3} defaultValue={modalMode === 'edit' ? selectedProject.description : ''} />
             </Grid.Col>
           </Grid>
 
@@ -764,11 +675,11 @@ export default function ProjectManagementModule() {
           </Paper>
 
           <Group justify="end" mt="md">
-            <Button variant="default" onClick={() => setProjectDrawerOpened(false)}>Cancel</Button>
-            <Button color="blue" onClick={() => setProjectDrawerOpened(false)}>Save Project</Button>
+            <Button variant="default" onClick={() => setprojectModalOpened(false)}>Cancel</Button>
+            <Button color="blue" onClick={() => setprojectModalOpened(false)}>Save Project</Button>
           </Group>
         </Stack>
-      </Drawer>
+      </Modal>
 
       {/* ====================================================================
           4. MODALS
@@ -788,31 +699,6 @@ export default function ProjectManagementModule() {
           <Group justify="end" mt="md">
             <Button variant="default" size="xs" onClick={() => setSubcontractorModal(false)}>Cancel</Button>
             <Button size="xs" color="blue" onClick={() => setSubcontractorModal(false)}>Add</Button>
-          </Group>
-        </Stack>
-      </Modal>
-
-      <Modal
-        opened={allocateStockModal}
-        onClose={() => setAllocateStockModal(false)}
-        title={<Text fw={600}>Allocate Stock</Text>}
-        centered
-        radius="md"
-        size="lg"
-      >
-        <Stack gap="md">
-          <Grid gap="sm">
-            <Grid.Col span={12}><Select size="sm" label="Project" value={selectedProjectId} data={MOCK_PROJECTS.map(p => ({ value: p.id, label: p.name }))} disabled /></Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}><Select size="sm" label="Source Godown" placeholder="Select godown" data={['Structural Storage Facility B', 'Main Yards Warehouse A']} required /></Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}><Select size="sm" label="Item" placeholder="Select item" data={['High-Tensile Steel Rebar 500D', 'M30 Structural Concrete Mix']} required /></Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}><NumberInput size="sm" label="Available Quantity" value={45} disabled /></Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}><NumberInput size="sm" label="Allocation Quantity" required min={1} max={45} /></Grid.Col>
-            <Grid.Col span={12}><TextInput size="sm" placeholder="Enter remarks" label="Remarks" /></Grid.Col>
-          </Grid>
-
-          <Group justify="end" mt="md">
-            <Button variant="default" size="sm" onClick={() => setAllocateStockModal(false)}>Cancel</Button>
-            <Button size="sm" color="blue" leftSection={<IconCalendar size={16} />} onClick={() => setAllocateStockModal(false)}>Allocate Stock</Button>
           </Group>
         </Stack>
       </Modal>

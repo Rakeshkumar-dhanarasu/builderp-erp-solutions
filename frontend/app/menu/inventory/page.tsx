@@ -38,6 +38,7 @@ import {
   IconEye,
   IconEdit,
   IconTrash,
+  IconBoxSeam,
   IconBan,
   IconPhone,
   IconMapPin,
@@ -62,6 +63,22 @@ import {
 // ==========================================
 // ENTERPRISE PMS INVENTORY MOCK DATA
 // ==========================================
+interface Project {
+  id: string;
+  name: string;
+  code: string;
+  customer: string;
+  location: string;
+  projectManager: string;
+  startDate: string;
+  expectedCompletion: string;
+  budgetAmount: number;
+  budgetUsedPct: number;
+  status: 'Not Started' | 'In Progress' | 'Completed' | 'Delayed';
+  type: string;
+  description: string;
+}
+
 const mockGodowns = [
   {
     id: "GDN-01",
@@ -98,6 +115,39 @@ const mockGodowns = [
     usedSpace: 9500,
     capacityUnit: "Cubic Meter",
     status: "Active"
+  }
+];
+
+const MOCK_PROJECTS: Project[] = [
+  {
+    id: 'PRJ-2026-001',
+    name: 'Phoenix Commercial Complex',
+    code: 'PMS-PHX-001',
+    customer: 'Phoenix Infra Corp',
+    location: 'Zone 4 Elevated Yards, Chennai',
+    projectManager: 'Arjun Mehta',
+    startDate: '2026-01-15',
+    expectedCompletion: '2026-12-20',
+    budgetAmount: 20000000,
+    budgetUsedPct: 68,
+    status: 'In Progress',
+    type: 'Commercial Real Estate',
+    description: 'Multi-tiered grade-A commercial base execution containing structural optimization cores.'
+  },
+  {
+    id: 'PRJ-2026-002',
+    name: 'Nexus Luxury Apartments',
+    code: 'PMS-NXS-002',
+    customer: 'Nexus Living Spaces',
+    location: 'Block C Core Infrastructure, Bangalore',
+    projectManager: 'Sarah Dsouza',
+    startDate: '2025-08-10',
+    expectedCompletion: '2026-10-15',
+    budgetAmount: 45000000,
+    budgetUsedPct: 91,
+    status: 'Delayed',
+    type: 'Residential High-Rise',
+    description: 'Premium luxury residential tower implementation with sustainable water and power baselines.'
   }
 ];
 
@@ -141,6 +191,16 @@ const mockUnits = [
   { name: "Sq.ft", symbol: "Sq.ft", description: "Area mapping metric for tiles, structural surface sheet claddings", status: "Active" }
 ];
 
+const MOCK_STOCK = [
+  { id: 's1', name: 'High-Tensile Steel Rebar 500D', category: 'Metals & Hardware', godown: 'Structural Storage Facility B', qty: 45, unit: 'Tons' },
+  { id: 's2', name: 'M30 Structural Concrete Mix', category: 'Bulk Materials', godown: 'Main Yards Warehouse A', qty: 1200, unit: 'CuM' }
+];
+
+const MOCK_ALLOC_HISTORY = [
+  { project: 'Phoenix Commercial Complex', item: 'High-Tensile Steel Rebar 500D', qty: 12, godown: 'Structural Storage Facility B', date: '2026-07-10', status: 'Allocated' },
+  { project: 'Nexus Luxury Apartments', item: 'M30 Structural Concrete Mix', qty: 450, godown: 'Main Yards Warehouse A', date: '2026-07-14', status: 'Allocated' }
+];
+
 // ==========================================
 // SYSTEM HELPER BADGE STYLES
 // ==========================================
@@ -158,6 +218,8 @@ export default function InventoryManagementPage() {
   const [activeModuleTab, setActiveModuleTab] = useState<string | null>("godown");
   const [activeMasterTab, setActiveMasterTab] = useState<string>("items");
   const [activeStockSubTab, setActiveStockSubTab] = useState<string>("current");
+  const [allocateStockModal, setAllocateStockModal] = useState<boolean>(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(MOCK_PROJECTS[0].id);
 
   // Common Filtering State Coordinates
   const [searchQuery, setSearchQuery] = useState("");
@@ -189,6 +251,19 @@ export default function InventoryManagementPage() {
   );
   const maxAvailableForTransfer = selectedStockItemInfo ? selectedStockItemInfo.availableQty : 0;
 
+  const renderStatusBadge = (status: string) => {
+      const statusMap: Record<string, string> = {
+        'Not Started': 'gray',
+        'In Progress': 'blue',
+        'Completed': 'green',
+        'Delayed': 'red',
+        'Active': 'green',
+        'Allocated': 'teal',
+        'Settled': 'green'
+      };
+      return <Badge color={statusMap[status] || 'blue'} variant="light" radius="sm">{status}</Badge>;
+    };
+
   return (
     <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       {/* MODULE HEADER BAR */}
@@ -206,6 +281,7 @@ export default function InventoryManagementPage() {
         <Tabs.List>
           <Tabs.Tab value="godown" leftSection={<IconMapPin size={14} />}>Godown (Locations)</Tabs.Tab>
           <Tabs.Tab value="stock" leftSection={<IconPackage size={14} />}>Stock Management</Tabs.Tab>
+          <Tabs.Tab value="allocate" leftSection={<IconBoxSeam size={14} />}>Stock Allocation</Tabs.Tab>
           <Tabs.Tab value="item-master" leftSection={<IconArchive size={14} />}>Item Master Directory</Tabs.Tab>
         </Tabs.List>
 
@@ -219,7 +295,6 @@ export default function InventoryManagementPage() {
                 <Text size="xs" fw={700} c="dimmed" tt="uppercase">Storage Location Matrices</Text>
                 <Button
                   size="xs"
-                  color="indigo"
                   leftSection={<IconPlus size={14} />}
                   onClick={openGodownForm}
                 >
@@ -348,7 +423,7 @@ export default function InventoryManagementPage() {
           <Stack gap="md">
             <SegmentedControl
               size="xs"
-              color="indigo"
+              color="brandOrange"
               value={activeStockSubTab}
               onChange={setActiveStockSubTab}
               data={[
@@ -412,7 +487,7 @@ export default function InventoryManagementPage() {
                           <Table.Td><Text size="10px" c="dimmed">{s.type}</Text></Table.Td>
                           <Table.Td><Text size="xs" c="dimmed" lineClamp={1}>{s.godown}</Text></Table.Td>
                           <Table.Td style={{ textAlign: "right" }}><Text size="xs" fw={700}>{s.availableQty} {s.unit}</Text></Table.Td>
-                          <Table.Td style={{ textAlign: "right" }}><Text size="xs" c="indigo">{s.reservedQty} {s.unit}</Text></Table.Td>
+                          <Table.Td style={{ textAlign: "right" }}><Text size="xs" c="brandOrange">{s.reservedQty} {s.unit}</Text></Table.Td>
                           <Table.Td style={{ textAlign: "center" }}><StockStatusBadge status={s.status} /></Table.Td>
                           <Table.Td><Text size="10px" c="dimmed">{s.lastUpdated}</Text></Table.Td>
                         </Table.Tr>
@@ -572,7 +647,93 @@ export default function InventoryManagementPage() {
         </Tabs.Panel>
 
         {/* ========================================================
-            TAB 3: ITEM MASTER DIRECTORY
+            TAB 3: STOCK ALLOCATION
+            ======================================================== */}
+        <Tabs.Panel value="allocate" mt="md">
+          <Paper p="md" radius="md" mb="xl" withBorder>
+            <Group justify="space-between" align="center">
+              <Stack gap={4}>
+                <Title order={4}>Stock Allocation Engine</Title>
+                <Text size="sm" c="dimmed">Allocate godown inventory directly to active construction sites.</Text>
+              </Stack>
+              <Button 
+                size="sm"
+                color="brandOrange"
+                leftSection={<IconPlus size={16} />} 
+                onClick={() => setAllocateStockModal(true)}
+              >
+                Allocate Stock
+              </Button>
+            </Group>
+          </Paper>
+
+          <Stack gap="md">
+            <Paper p="md" radius="md" withBorder>
+              <Text fw={600} size="sm" mb="md">Available Stock View</Text>
+              <Table.ScrollContainer minWidth={600}>
+                <Table variant="simple" verticalSpacing="sm">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Item Name</Table.Th>
+                      <Table.Th>Category</Table.Th>
+                      <Table.Th>Godown</Table.Th>
+                      <Table.Th style={{ textAlign: 'right' }}>Available Quantity</Table.Th>
+                      <Table.Th>Unit</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {MOCK_STOCK.map((item) => (
+                      <Table.Tr key={item.id}>
+                        <Table.Td><Text size="xs" fw={600}>{item.name}</Text></Table.Td>
+                        <Table.Td><Text size="xs">{item.category}</Text></Table.Td>
+                        <Table.Td><Text size="xs" c="dimmed">{item.godown}</Text></Table.Td>
+                        <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600}>{item.qty}</Text></Table.Td>
+                        <Table.Td><Text size="xs" c="dimmed">{item.unit}</Text></Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            </Paper>
+
+            <Paper p="md" radius="md" withBorder>
+              <Text fw={600} size="sm" mb="sm">Allocated Stock History</Text>
+              <Table.ScrollContainer minWidth={600}>
+                <Table variant="striped" verticalSpacing="xs">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Project</Table.Th>
+                      <Table.Th>Item</Table.Th>
+                      <Table.Th style={{ textAlign: 'right' }}>Quantity Allocated</Table.Th>
+                      <Table.Th>Godown</Table.Th>
+                      <Table.Th>Allocation Date</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                      <Table.Th style={{ width: 80 }}></Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {MOCK_ALLOC_HISTORY.map((h, idx) => (
+                      <Table.Tr key={idx}>
+                        <Table.Td><Text size="xs" fw={600}>{h.project}</Text></Table.Td>
+                        <Table.Td><Text size="xs">{h.item}</Text></Table.Td>
+                        <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600}>{h.qty}</Text></Table.Td>
+                        <Table.Td><Text size="xs" c="dimmed">{h.godown}</Text></Table.Td>
+                        <Table.Td><Text size="xs">{h.date}</Text></Table.Td>
+                        <Table.Td>{renderStatusBadge(h.status)}</Table.Td>
+                        <Table.Td>
+                          <Button size="9px" variant="light" color="orange">Return Stock</Button>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            </Paper>
+          </Stack>
+        </Tabs.Panel>
+
+        {/* ========================================================
+            TAB 4: ITEM MASTER DIRECTORY
             ======================================================== */}
         <Tabs.Panel value="item-master" mt="md">
           <Tabs value={activeMasterTab} onChange={(val) => val && setActiveMasterTab(val)} color="indigo">
@@ -1027,6 +1188,31 @@ export default function InventoryManagementPage() {
           </Group>
         </Stack>
       </Drawer>
+
+      <Modal
+        opened={allocateStockModal}
+        onClose={() => setAllocateStockModal(false)}
+        title={<Text fw={600}>Allocate Stock</Text>}
+        centered
+        radius="md"
+        size="lg"
+      >
+        <Stack gap="md">
+          <Grid gap="sm">
+            <Grid.Col span={12}><Select size="sm" label="Project" value={selectedProjectId} data={MOCK_PROJECTS.map(p => ({ value: p.id, label: p.name }))} disabled /></Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}><Select size="sm" label="Source Godown" placeholder="Select godown" data={['Structural Storage Facility B', 'Main Yards Warehouse A']} required /></Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}><Select size="sm" label="Item" placeholder="Select item" data={['High-Tensile Steel Rebar 500D', 'M30 Structural Concrete Mix']} required /></Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}><NumberInput size="sm" label="Available Quantity" value={45} disabled /></Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}><NumberInput size="sm" label="Allocation Quantity" required min={1} max={45} /></Grid.Col>
+            <Grid.Col span={12}><TextInput size="sm" placeholder="Enter remarks" label="Remarks" /></Grid.Col>
+          </Grid>
+
+          <Group justify="end" mt="md">
+            <Button variant="default" size="sm" onClick={() => setAllocateStockModal(false)}>Cancel</Button>
+            <Button size="sm" color="blue" leftSection={<IconCalendar size={16} />} onClick={() => setAllocateStockModal(false)}>Allocate Stock</Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   );
 }

@@ -30,7 +30,7 @@ import {
   IconChevronLeft,
   IconUsers,
   IconChevronRight,
-  IconBuilding
+  IconCurrencyDirham
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -43,6 +43,7 @@ const navLinks = [
   { label: "Reports", href: "/menu/reports", icon: IconReportAnalytics },
   { label: "Stakeholders", href: "/menu/stakeholders", icon: IconUsers },
   { label: "Inventory", href: "/menu/inventory", icon: IconShoppingCart },
+  { label: "Finance", href: "/menu/finance", icon: IconCurrencyDirham },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

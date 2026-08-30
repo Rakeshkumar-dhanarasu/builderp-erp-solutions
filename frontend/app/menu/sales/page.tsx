@@ -18,7 +18,6 @@ import {
   RingProgress,
   ActionIcon,
   Modal,
-  Drawer,
   Timeline,
   NumberInput,
   Textarea,
@@ -29,10 +28,11 @@ import {
   SimpleGrid
 } from '@mantine/core';
 import { 
-  IconSearch, IconFilter, IconPlus, IconEye, IconEdit, IconUpload, 
-  IconRefresh, IconFileText, IconDownload, IconArrowRight, IconCurrencyRupee, 
+  IconSearch, IconFilter, IconPlus, IconEye, IconEdit, IconUpload, IconTrash,
+  IconRefresh, IconFileText, IconDownload,
   IconCheck, IconX, IconAlertCircle, IconHistory, IconFileCheck, IconCalendar
 } from '@tabler/icons-react';
+import { QuotationTable } from '@/components/QuotationTable';
 
 // ==========================================
 // MOCK DATA & INTERFACES
@@ -70,6 +70,29 @@ interface Quotation {
   history: QuotationVersion[];
 }
 
+interface BudgetCategory {
+  id: string;
+  category: string;
+  value: number;
+}
+
+const CATEGORY_OPTIONS = [
+  'Purchase material',
+  'Subcontractors',
+  'Transport',
+  'Miscellaneous',
+  'Labors Force',
+];
+
+// Category color mappings for the RingProgress chart
+const CATEGORY_COLORS: Record<string, string> = {
+  'Purchase material': 'blue',
+  'Subcontractors': 'violet',
+  'Transport': 'orange',
+  'Miscellaneous': 'gray',
+  'Labors Force': 'cyan',
+};
+
 const INITIAL_QUOTATIONS: Quotation[] = [
   {
     id: 'q-1',
@@ -83,12 +106,12 @@ const INITIAL_QUOTATIONS: Quotation[] = [
     validUntil: '2026-08-15',
     notes: 'Standard commercial construction terms apply.',
     items: [
-      { id: '1', description: 'Excavation & Shoring', quantity: 1, unit: 'LS', rate: 500000, amount: 500000 },
-      { id: '2', description: 'Structural Steel works', quantity: 150, unit: 'Tons', rate: 10000, amount: 1500000 }
+      { id: '1', description: 'Excavation & Shoring', quantity: 1, unit: 'LS', rate: 2011.32, amount: 2011.32 },
+      { id: '2', description: 'Structural Steel works', quantity: 150, unit: 'Tons', rate: 40.23, amount: 6034.5 }
     ],
     history: [
-      { version: 1, date: '2026-06-10', createdBy: 'Alex Smith', reason: 'Initial submission', status: 'Revision Required', value: 2200000 },
-      { version: 2, date: '2026-06-15', createdBy: 'Alex Smith', reason: 'Discount applied as requested', status: 'Accepted', value: 2000000 }
+      { version: 1, date: '2026-06-10', createdBy: 'Alex Smith', reason: 'Initial submission', status: 'Revision Required', value: 8849.81 },
+      { version: 2, date: '2026-06-15', createdBy: 'Alex Smith', reason: 'Discount applied as requested', status: 'Accepted', value: 8045.28 }
     ]
   },
   {
@@ -97,19 +120,23 @@ const INITIAL_QUOTATIONS: Quotation[] = [
     project: 'Nexus Luxury Apartments',
     customer: 'Nexus Living Spaces',
     version: 1,
-    totalValue: 176314.93,
+    totalValue: 18096,
     createdDate: '2026-07-01',
     status: 'Sent to Customer',
     validUntil: '2026-09-01',
     notes: 'Awaiting client executive panel review.',
     items: [
-      { id: '1', description: 'Foundation concrete pour', quantity: 1200, unit: 'CuM', rate: 3750, amount: 4500000 }
+      { id: '1', description: 'Foundation concrete pour', quantity: 1200, unit: 'CuM', rate: 15.08, amount: 18096 }
     ],
     history: [
-      { version: 1, date: '2026-07-01', createdBy: 'Sarah Jenkins', reason: 'Initial proposal', status: 'Sent to Customer', value: 4500000 }
+      { version: 1, date: '2026-07-01', createdBy: 'Sarah Jenkins', reason: 'Initial proposal', status: 'Sent to Customer', value: 18096 }
     ]
   }
 ];
+
+// Helper to format values consistently in OMR
+const formatOMR = (val: number) =>
+  new Intl.NumberFormat('en-OM', { style: 'currency', currency: 'OMR' }).format(val);
 
 // ==========================================
 // CORE COMPONENT
@@ -117,7 +144,15 @@ const INITIAL_QUOTATIONS: Quotation[] = [
 export default function SalesModule() {
   const [activeTab, setActiveTab] = useState<string | null>('quotations');
   const [quotations, setQuotations] = useState<Quotation[]>(INITIAL_QUOTATIONS);
-  const [selectedProject, setSelectedProject] = useState<string>('Phoenix Commercial Complex');
+
+  // 1. Approved Quotations filter & project selection
+  const approvedQuotations = quotations.filter((q) => q.status === 'Accepted');
+  const [selectedProject, setSelectedProject] = useState<string>(
+    approvedQuotations[0]?.project || 'Phoenix Commercial Complex'
+  );
+
+  const activeApprovedQuotation = approvedQuotations.find((q) => q.project === selectedProject);
+  const approvedContractTotal = activeApprovedQuotation?.totalValue || 0;
 
   // Modal / Drawer control states
   const [formOpen, setFormOpen] = useState(false);
@@ -141,6 +176,74 @@ export default function SalesModule() {
     return <Badge color={maps[status] || 'gray'} variant="light">{status}</Badge>;
   };
 
+  // 2. Budget Allocation States (Read/Edit Toggle Flow)
+  const [isEditingBudget, setIsEditingBudget] = useState<boolean>(false);
+  const [categories, setCategories] = useState<BudgetCategory[]>([
+    { id: '1', category: 'Purchase material', value: 3000 },
+    { id: '2', category: 'Labors Force', value: 2000 },
+    { id: '3', category: 'Subcontractors', value: 1200 },
+    { id: '4', category: 'Miscellaneous', value: 500 },
+  ]);
+  const [draftCategories, setDraftCategories] = useState<BudgetCategory[]>(categories);
+  const [miscReason, setMiscReason] = useState<string>('');
+
+  // Active items being calculated
+  const currentCategories = isEditingBudget ? draftCategories : categories;
+
+  // Real-time KPI Calculations
+  const totalAllocated = currentCategories.reduce((sum, item) => sum + (item.value || 0), 0);
+  const escrowBalance = Math.max(0, approvedContractTotal - totalAllocated);
+  const consumptionRatio = approvedContractTotal > 0
+    ? ((totalAllocated / approvedContractTotal) * 100).toFixed(1)
+    : '0.0';
+
+  const hasMiscCategory = currentCategories.some((item) => item.category === 'Miscellaneous');
+
+  // Budget Edit Handlers
+  const handleStartEditingBudget = () => {
+    setDraftCategories([...categories]);
+    setIsEditingBudget(true);
+  };
+
+  const handleSaveBudgetEdits = () => {
+    setCategories([...draftCategories]);
+    setIsEditingBudget(false);
+  };
+
+  const handleCancelBudgetEdits = () => {
+    setDraftCategories([...categories]);
+    setIsEditingBudget(false);
+  };
+
+  const handleAddCategory = () => {
+    const newCategory: BudgetCategory = {
+      id: typeof window !== 'undefined' && window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}`,
+      category: 'Purchase material',
+      value: 0,
+    };
+    setDraftCategories((prev) => [...prev, newCategory]);
+  };
+
+  const handleUpdateCategory = (id: string, key: keyof BudgetCategory, val: string | number) => {
+    setDraftCategories((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [key]: val } : item))
+    );
+  };
+
+  const handleDeleteCategory = (id: string) => {
+    setDraftCategories((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  // RingProgress Sections calculation
+  const chartSections = currentCategories.map((cat) => {
+    const categoryPct = approvedContractTotal > 0 ? (cat.value / approvedContractTotal) * 100 : 0;
+    return {
+      value: categoryPct,
+      color: CATEGORY_COLORS[cat.category] || 'blue',
+      tooltip: `${cat.category}: ${formatOMR(cat.value)} (${categoryPct.toFixed(1)}%)`,
+    };
+  });
+
   return (
     <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
       <Paper p="md" radius="md" mb="xl" withBorder>
@@ -149,16 +252,6 @@ export default function SalesModule() {
             <Title order={2} className="enterprise-title">Commercial Lifecycle Engine</Title>
             <Text size="sm" c="dimmed">Manage configurations for Pre-Construction Contracts, Budgets, and Escrow Trackers.</Text>
           </Stack>
-          <Select 
-            label="Active Enterprise Project"
-            placeholder="Switch Scope"
-            value={selectedProject}
-            onChange={(val) => val && setSelectedProject(val)}
-            data={[
-              'Phoenix Commercial Complex',
-              'Nexus Luxury Apartments'
-            ]}
-          />
         </Group>
       </Paper>
 
@@ -166,8 +259,6 @@ export default function SalesModule() {
         <Tabs.List mb="lg">
           <Tabs.Tab value="quotations" leftSection={<IconFileText size={16} />}>Quotations</Tabs.Tab>
           <Tabs.Tab value="budgeting" leftSection={<IconRefresh size={16} />}>Budgeting</Tabs.Tab>
-          <Tabs.Tab value="payments" leftSection={<IconCurrencyRupee size={16} />}>Client Payments</Tabs.Tab>
-          <Tabs.Tab value="receipts" leftSection={<IconFileCheck size={16} />}>Receipts Archive</Tabs.Tab>
         </Tabs.List>
 
         {/* ==========================================
@@ -196,7 +287,7 @@ export default function SalesModule() {
               <Grid.Col span={{ base: 12, md: 4 }}><TextInput label="Search Ref" placeholder="Search customer, project..." leftSection={<IconSearch size={16} />} /></Grid.Col>
               <Grid.Col span={{ base: 12, sm: 4, md: 3 }}><Select label="Filter Status" placeholder="All Stages" data={['Draft', 'Sent', 'Accepted', 'Revision Required']} clearable /></Grid.Col>
               <Grid.Col span={{ base: 12, sm: 4, md: 3 }}><TextInput label="Lifecycle Boundary" type="date" leftSection={<IconCalendar size={16} />} /></Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 4, md: 2 }}><Button variant="light" color='brandOrange' fullWidth leftSection={<IconFilter size={16} />}>Apply</Button></Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 4, md: 2 }}><Button color='brandOrange' fullWidth leftSection={<IconFilter size={16} />}>Apply</Button></Grid.Col>
             </Grid>
           </Card>
 
@@ -221,7 +312,7 @@ export default function SalesModule() {
                     <Table.Td>{q.customer}</Table.Td>
                     <Table.Td>{q.project}</Table.Td>
                     <Table.Td>v{q.version}</Table.Td>
-                    <Table.Td>{new Intl.NumberFormat('en-OM', { style: 'currency', currency: 'OMR'}).format(q.totalValue)}</Table.Td>
+                    <Table.Td>{formatOMR(q.totalValue)}</Table.Td>
                     <Table.Td>{getStatusBadge(q.status)}</Table.Td>
                     <Table.Td>
                       <Group gap={4} wrap="nowrap">
@@ -244,69 +335,188 @@ export default function SalesModule() {
         <Tabs.Panel value="budgeting">
           <Grid mb="xl">
             <Grid.Col span={{ base: 12, md: 8 }}>
-              <Title order={3} mb="xs">Operational Allocation Matrix</Title>
-              <Text size="sm" c="dimmed" mb="lg">Distribute approved contract totals down to modular structural accounts below.</Text>
-              
+              <Group justify="space-between" align="center">
+                <Stack gap={2}>
+                  <Title order={3} mb="xs">Operational Allocation Matrix</Title>
+                  <Text size="sm" c="dimmed" mb="lg">Distribute approved contract totals down to modular structural accounts below.</Text>
+                </Stack>
+                <Select 
+                  label="Active Approved Project"
+                  placeholder="Switch Scope"
+                  value={selectedProject}
+                  onChange={(val) => val && setSelectedProject(val)}
+                  data={approvedQuotations.map((q) => q.project)}
+                />
+              </Group>
+
+              {/* Top Dynamic KPI Cards */}
               <Grid mb="md">
                 <Grid.Col span={{ base: 6, sm: 3 }}>
                   <Paper withBorder p="sm" radius="md">
                     <Text size="xs" c="dimmed" fw={700}>APPROVED CONTRACT</Text>
-                    <Text size="lg" fw={700}>₹20,00,000</Text>
+                    <Text size="lg" fw={700}>{formatOMR(approvedContractTotal)}</Text>
                   </Paper>
                 </Grid.Col>
                 <Grid.Col span={{ base: 6, sm: 3 }}>
                   <Paper withBorder p="sm" radius="md">
                     <Text size="xs" c="dimmed" fw={700}>ALLOCATED SUM</Text>
-                    <Text size="lg" fw={700} c="blue">₹14,50,000</Text>
+                    <Text size="lg" fw={700} c="blue">{formatOMR(totalAllocated)}</Text>
                   </Paper>
                 </Grid.Col>
                 <Grid.Col span={{ base: 6, sm: 3 }}>
                   <Paper withBorder p="sm" radius="md">
                     <Text size="xs" c="dimmed" fw={700}>ESCROW BALANCE</Text>
-                    <Text size="lg" fw={700} c="green">₹5,50,000</Text>
+                    <Text size="lg" fw={700} c={escrowBalance >= 0 ? "green" : "red"}>{formatOMR(escrowBalance)}</Text>
                   </Paper>
                 </Grid.Col>
                 <Grid.Col span={{ base: 6, sm: 3 }}>
                   <Paper withBorder p="sm" radius="md">
                     <Text size="xs" c="dimmed" fw={700}>CONSUMPTION RATIO</Text>
-                    <Text size="lg" fw={700} c="orange">72.5%</Text>
+                    <Text size="lg" fw={700} c={Number(consumptionRatio) > 100 ? "red" : "orange"}>{consumptionRatio}%</Text>
                   </Paper>
                 </Grid.Col>
               </Grid>
 
               {/* Budget Allocation Workspace Table */}
-              <Card withBorder radius="md" p="sm" mb="xl">
-                <Group justify="between" mb="md">
-                  <Text fw={700}>Cost Object Structures</Text>
-                  <Button size="xs" variant="light" leftSection={<IconPlus size={14} />}>Add Budget Category</Button>
+              <Stack gap="md">
+                <Group justify="space-between">
+                  <Group gap="xs">
+                    <Text fw={700}>Cost Object Structures</Text>
+                    <Badge variant="light" color="brandOrange">
+                      Total: {formatOMR(totalAllocated)}
+                    </Badge>
+                  </Group>
+
+                  {/* Actions Toggle */}
+                  {!isEditingBudget ? (
+                    <Button
+                      size="xs"
+                      variant="light"
+                      leftSection={<IconEdit size={14} />}
+                      onClick={handleStartEditingBudget}
+                    >
+                      Edit Budgeting
+                    </Button>
+                  ) : (
+                    <Group gap="xs">
+                      <Button
+                        size="xs"
+                        variant="default"
+                        leftSection={<IconX size={14} />}
+                        onClick={handleCancelBudgetEdits}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        leftSection={<IconPlus size={14} />}
+                        onClick={handleAddCategory}
+                      >
+                        Add Category
+                      </Button>
+                      <Button
+                        size="xs"
+                        color="brandOrange"
+                        leftSection={<IconCheck size={14} />}
+                        onClick={handleSaveBudgetEdits}
+                      >
+                        Save Changes
+                      </Button>
+                    </Group>
+                  )}
                 </Group>
-                <Table variant="simple" verticalSpacing="xs">
+
+                <Table withTableBorder variant="simple" verticalSpacing="xs">
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th>Cost Ledger Target</Table.Th>
-                      <Table.Th style={{ width: '200px' }}>Target Floor Value (INR)</Table.Th>
-                      <Table.Th>Weight Distribution</Table.Th>
+                      <Table.Th style={{ width: '220px' }}>Target Floor Value (OMR)</Table.Th>
+                      <Table.Th style={{ width: '150px' }}>Weight Distribution</Table.Th>
+                      {isEditingBudget && <Table.Th style={{ width: '60px' }}></Table.Th>}
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
-                    {[
-                      { cat: 'Raw Materials & Bulk Aggregate', val: 600000, pct: 30 },
-                      { cat: 'Onsite Labor & Subcontract Workforces', val: 400000, pct: 20 },
-                      { cat: 'Equipment Leasing & Heavy Logistics', val: 250000, pct: 12.5 },
-                      { cat: 'Site Overhead & Compliance Certifications', val: 200000, pct: 10 }
-                    ].map((row, idx) => (
-                      <Table.Tr key={idx}>
-                        <Table.Td fw={500}>{row.cat}</Table.Td>
-                        <Table.Td><NumberInput size="xs" prefix="₹" decimalScale={2} defaultValue={row.val} /></Table.Td>
-                        <Table.Td><Text size="sm">{row.pct}%</Text></Table.Td>
-                      </Table.Tr>
-                    ))}
+                    {currentCategories.map((row) => {
+                      const pct = totalAllocated > 0 ? ((row.value / totalAllocated) * 100).toFixed(1) : '0.0';
+
+                      return (
+                        <Table.Tr key={row.id}>
+                          {/* Category Display or Dropdown */}
+                          <Table.Td>
+                            {isEditingBudget ? (
+                              <Select
+                                size="xs"
+                                data={CATEGORY_OPTIONS}
+                                value={row.category}
+                                onChange={(val) => handleUpdateCategory(row.id, 'category', val || 'Purchase material')}
+                                allowDeselect={false}
+                                searchable
+                              />
+                            ) : (
+                              <Text size="sm" fw={500}>{row.category}</Text>
+                            )}
+                          </Table.Td>
+
+                          {/* Numeric Value Display or Input */}
+                          <Table.Td>
+                            {isEditingBudget ? (
+                              <NumberInput
+                                size="xs"
+                                prefix="ر.ع. "
+                                decimalScale={3}
+                                value={row.value}
+                                onChange={(val) => handleUpdateCategory(row.id, 'value', typeof val === 'number' ? val : 0)}
+                                min={0}
+                              />
+                            ) : (
+                              <Text size="sm">{formatOMR(row.value)}</Text>
+                            )}
+                          </Table.Td>
+
+                          {/* Weight Percentage */}
+                          <Table.Td>
+                            <Text size="sm" fw={500}>{pct}%</Text>
+                          </Table.Td>
+
+                          {/* Delete Action (visible in edit mode) */}
+                          {isEditingBudget && (
+                            <Table.Td>
+                              <ActionIcon
+                                variant="subtle"
+                                color="red"
+                                size="sm"
+                                onClick={() => handleDeleteCategory(row.id)}
+                                title="Delete Category"
+                                disabled={draftCategories.length <= 1}
+                              >
+                                <IconTrash size={14} />
+                              </ActionIcon>
+                            </Table.Td>
+                          )}
+                        </Table.Tr>
+                      );
+                    })}
                   </Table.Tbody>
                 </Table>
-              </Card>
+
+                {/* Comment section for Miscellaneous Budget usage */}
+                {hasMiscCategory && (
+                  <Textarea
+                    label="Miscellaneous Budget Remarks"
+                    placeholder="Specify reasons or scope details for allocating miscellaneous budget..."
+                    value={miscReason}
+                    onChange={(e) => setMiscReason(e.currentTarget.value)}
+                    rows={2}
+                    size="xs"
+                    readOnly={!isEditingBudget}
+                    required
+                  />
+                )}
+              </Stack>
             </Grid.Col>
 
-            {/* Side Progress & Visualizations */}
+            {/* Dynamic Side Progress Visualizations */}
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Card withBorder radius="md" p="lg" style={{ height: '100%' }}>
                 <Text fw={700} mb="xs" ta="center">Allocation Integrity Map</Text>
@@ -316,13 +526,8 @@ export default function SalesModule() {
                     size={180}
                     thickness={16}
                     roundCaps
-                    sections={[
-                      { value: 30, color: 'blue', tooltip: 'Materials' },
-                      { value: 20, color: 'cyan', tooltip: 'Labor' },
-                      { value: 12.5, color: 'orange', tooltip: 'Equipment' },
-                      { value: 10, color: 'violet', tooltip: 'Overheads' },
-                    ]}
-                    label={<Text size="xs" ta="center" fw={700} c="dimmed">72.5% Assigned</Text>}
+                    sections={chartSections}
+                    label={<Text size="xs" ta="center" fw={700} c="dimmed">{consumptionRatio}% Assigned</Text>}
                   />
                 </Group>
                 <Text size="xs" c="dimmed" ta="center" mt="md">
@@ -331,201 +536,24 @@ export default function SalesModule() {
               </Card>
             </Grid.Col>
           </Grid>
-
-          {/* Payment Planning Milestone Scheduler Sub-Section */}
-          <Title order={4} mb="sm" mt="xl">Contracted Tranche & Milestone Forecast</Title>
-          <Table withTableBorder highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Phase Target Trigger</Table.Th>
-                <Table.Th>Distribution Weight</Table.Th>
-                <Table.Th>Tranche Milestone Sum</Table.Th>
-                <Table.Th>Target Calendar Bound</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {[
-                { phase: 'Mobilization & Initial Advance', pct: '25%', sum: '₹5,00,000', date: 'Project Initialization' },
-                { phase: 'Superstructure Slab Cast Target Completion', pct: '40%', sum: '₹8,00,000', date: 'Phase 2 Threshold' },
-                { phase: 'Handover Clearance & Final Commissioning', pct: '35%', sum: '₹7,00,000', date: 'Terminal Signoff' }
-              ].map((m, i) => (
-                <Table.Tr key={i}>
-                  <Table.Td fw={600}>{m.phase}</Table.Td>
-                  <Table.Td>{m.pct}</Table.Td>
-                  <Table.Td c="blue" fw={700}>{m.sum}</Table.Td>
-                  <Table.Td>{m.date}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
         </Tabs.Panel>
 
-        {/* ==========================================
-            TAB 3: CLIENT PAYMENTS TRACKER
-           ========================================== */}
-        <Tabs.Panel value="payments">
-          <Group justify="space-between" mb="lg">
-            <div>
-              <Title order={3}>Receivable Ledger Matrix</Title>
-              <Text size="sm" c="dimmed">Cross-examine asset receipts against structural target intervals.</Text>
-            </div>
-            <Button leftSection={<IconCurrencyRupee size={16} />} color="teal" onClick={() => setPaymentOpen(true)}>
-              Record Client Payment
-            </Button>
-          </Group>
-
-          {/* Metrics Panel Array */}
-          <Grid mb="xl">
-            {[
-              { label: 'GROSS PROJECT VALUE', val: '₹20,00,000', c: 'dark' },
-              { label: 'ACQUIRED LIQUIDITY', val: '₹13,00,000', c: 'green' },
-              { label: 'ESCROW RECEIVABLES BALANCE', val: '₹7,00,000', c: 'orange' },
-              { label: 'PAST DUE EXPOSURES', val: '₹0.00', c: 'gray' }
-            ].map((card, i) => (
-              <Grid.Col span={{ base: 6, sm: 3 }} key={i}>
-                <Paper p="md" radius="md" withBorder>
-                  <Text size="xs" c="dimmed" fw={700}>{card.label}</Text>
-                  <Text size="xl" fw={700} c={card.c !== 'dark' ? card.c : undefined}>{card.val}</Text>
-                </Paper>
-              </Grid.Col>
-            ))}
-          </Grid>
-
-          {/* Master Payment Targets Schedule */}
-          <Title order={4} mb="md">Milestone Verification Tracks</Title>
-          <Table.ScrollContainer minWidth={800} mb="xl">
-            <Table withTableBorder highlightOnHover verticalSpacing="sm">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Structural Target Anchor</Table.Th>
-                  <Table.Th>Contracted Sum</Table.Th>
-                  <Table.Th>Settled Component</Table.Th>
-                  <Table.Th>Outstanding Balance</Table.Th>
-                  <Table.Th>Target Boundary</Table.Th>
-                  <Table.Th>Status Tiers</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {[
-                  { m: 'Mobilization & Initial Advance', plan: 500000, paid: 500000, due: 0, date: '2026-06-20', status: 'Paid' },
-                  { m: 'Superstructure Slab Cast Target Completion', plan: 800000, paid: 800000, due: 0, date: '2026-07-10', status: 'Paid' },
-                  { m: 'Handover Clearance & Final Commissioning', plan: 700000, paid: 0, due: 700000, date: '2026-09-30', status: 'Pending' }
-                ].map((row, i) => (
-                  <Table.Tr key={i}>
-                    <Table.Td fw={600}>{row.m}</Table.Td>
-                    <Table.Td>₹{row.plan.toLocaleString('en-IN')}</Table.Td>
-                    <Table.Td c="green">₹{row.paid.toLocaleString('en-IN')}</Table.Td>
-                    <Table.Td c={row.due > 0 ? 'orange' : 'gray'}>₹{row.due.toLocaleString('en-IN')}</Table.Td>
-                    <Table.Td>{row.date}</Table.Td>
-                    <Table.Td>{getStatusBadge(row.status)}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-
-          {/* Transaction Ledger Records */}
-          <Title order={4} mb="md">Historical Inflow Ledger</Title>
-          <Table variant="striped" withTableBorder>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Clearing Date</Table.Th>
-                <Table.Th>Settled Sum</Table.Th>
-                <Table.Th>Channel Route</Table.Th>
-                <Table.Th>Gateway System Identifier</Table.Th>
-                <Table.Th>Clerk Entry Signoff</Table.Th>
-                <Table.Th>Internal Audit Logs</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {[
-                { date: '2026-06-18', amt: 500000, mode: 'NEFT Transfer', ref: 'NFX261709827', user: 'Sarah J.', note: 'Advance mobilization clearing check' },
-                { date: '2026-07-12', amt: 800000, mode: 'RTGS Network', ref: 'RTGS88726154A', user: 'Sarah J.', note: 'Slab structural step completion release' }
-              ].map((h, i) => (
-                <Table.Tr key={i}>
-                  <Table.Td>{h.date}</Table.Td>
-                  <Table.Td fw={700} c="green">₹{h.amt.toLocaleString('en-IN')}</Table.Td>
-                  <Table.Td>{h.mode}</Table.Td>
-                  <Table.Td style={{ fontFamily: 'monospace' }}>{h.ref}</Table.Td>
-                  <Table.Td>{h.user}</Table.Td>
-                  <Table.Td><Text size="xs" c="dimmed">{h.note}</Text></Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Tabs.Panel>
-
-        {/* ==========================================
-            TAB 4: RECEIPTS ARCHIVE MODULE
-           ========================================== */}
-        <Tabs.Panel value="receipts">
-          <Title order={3} mb="xs">Cleared Transaction Archive</Title>
-          <Text size="sm" c="dimmed" mb="lg">Retrieve generated tax receipts and compliance clearance forms.</Text>
-
-          {/* Filter Bar */}
-          <Card withBorder radius="md" p="xs" mb="md">
-            <Group justify="spaced" grow>
-              <TextInput placeholder="Search receipt registry identifier..." leftSection={<IconSearch size={16} />} />
-              <Select placeholder="Filter Payment Mechanism" data={['NEFT Transfer', 'RTGS Network', 'Corporate Cheque']} clearable />
-              <Button variant="light" leftSection={<IconFilter size={16} />}>Execute Evaluation Query</Button>
-            </Group>
-          </Card>
-
-          {/* Receipts Vault Registry Table */}
-          <Table highlightOnHover verticalSpacing="md" withTableBorder>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Receipt Anchor Token</Table.Th>
-                <Table.Th>Enterprise Context</Table.Th>
-                <Table.Th>Client Corporate Handle</Table.Th>
-                <Table.Th>Assoc Clear Reference</Table.Th>
-                <Table.Th>Net Value Passed</Table.Th>
-                <Table.Th>System Entry Execution</Table.Th>
-                <Table.Th>Vault Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {[
-                { id: 'REC-2026-8891', proj: 'Phoenix Commercial Complex', client: 'Phoenix Infra Corp', ref: 'NFX261709827', amt: 500000, date: '2026-06-18', mode: 'NEFT' },
-                { id: 'REC-2026-9042', proj: 'Phoenix Commercial Complex', client: 'Phoenix Infra Corp', ref: 'RTGS88726154A', amt: 800000, date: '2026-07-12', mode: 'RTGS' }
-              ].map((r) => (
-                <Table.Tr key={r.id}>
-                  <Table.Td style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{r.id}</Table.Td>
-                  <Table.Td>{r.proj}</Table.Td>
-                  <Table.Td>{r.client}</Table.Td>
-                  <Table.Td style={{ fontFamily: 'monospace' }}>{r.ref}</Table.Td>
-                  <Table.Td fw={700}>₹{r.amt.toLocaleString('en-IN')}</Table.Td>
-                  <Table.Td>{r.date}</Table.Td>
-                  <Table.Td>
-                    <Group gap={8}>
-                      <Button size="xs" variant="default" leftSection={<IconEye size={12} />} onClick={() => { setSelectedReceipt(r); setReceiptOpen(true); }}>
-                        Review Layout
-                      </Button>
-                      <ActionIcon variant="light" color="red" size="sm">
-                        <IconDownload size={14} />
-                      </ActionIcon>
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Tabs.Panel>
+        
       </Tabs>
 
       {/* ==========================================
           MODALS & DRAWERS WORKSPACE INTERFACES
          ========================================== */}
 
-      {/* 1. Full Page Quotation Creation Workspace (Drawer) */}
+      {/* 1. Full Page Quotation Creation Workspace */}
       <Modal
         opened={formOpen}
         onClose={() => setFormOpen(false)}
         title={activeQuotation ? "Revise Quotation" : "Draft New Quotation"}
         padding="xl"
-        size="70%"
+        size="100%"
       >
-        <Container size="lg">
+        <Container size="100%">
           <Title order={3} mb="lg">Operational Quote Configuration</Title>
           <SimpleGrid cols={4} spacing='md'>
               <TextInput label="Quotation Ref Number" value={activeQuotation?.qNumber || "QT-2026-AUTO"} disabled />
@@ -540,47 +568,19 @@ export default function SalesModule() {
           <Textarea label="Quotation Subject" defaultValue={activeQuotation?.notes || ""} rows={3}/>
           <Divider my="md" />
           
-          <Table withTableBorder withColumnBorders mb="xl">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Work Object Element</Table.Th>
-                <Table.Th style={{ width: '100px' }}>Quantity</Table.Th>
-                <Table.Th style={{ width: '100px' }}>Unit Type</Table.Th>
-                <Table.Th style={{ width: '150px' }}>Unit Rate (INR)</Table.Th>
-                <Table.Th style={{ width: '150px' }}>Net Segment Sum</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {(activeQuotation?.items || [
-                { id: '1', description: 'Excavation Engineering Works', quantity: 1, unit: 'LS', rate: 500000, amount: 500000 }
-              ]).map((item) => (
-                <Table.Tr key={item.id}>
-                  <Table.Td><TextInput defaultValue={item.description} size="xs" /></Table.Td>
-                  <Table.Td><NumberInput defaultValue={item.quantity} size="xs" /></Table.Td>
-                  <Table.Td><TextInput defaultValue={item.unit} size="xs" /></Table.Td>
-                  <Table.Td><NumberInput defaultValue={item.rate} prefix="₹" size="xs" /></Table.Td>
-                  <Table.Td fw={600} style={{ verticalAlign: 'middle' }}>₹{item.amount.toLocaleString('en-IN')}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
+          <QuotationTable/>
 
-          <Paper withBorder p="md" radius="md" style={{ maxWidth: '400px', marginLeft: 'auto' }} mb="xl">
-            <Group justify="between" mb="xs"><Text size="sm">Tax Levies (GST 18%):</Text><Text size="sm" fw={700}>Calculated at Submission</Text></Group>
-            <Group justify="between" mb="xs"><Text size="sm">Corporate Reprieve Discount:</Text><Text size="sm" fw={700}>₹0.00</Text></Group>
-            <Divider my="xs" />
-            <Group justify="between"><Text fw={700}>Target Gross Contract sum:</Text><Text size="lg" fw={800} c="blue">₹{(activeQuotation?.totalValue || 500000).toLocaleString('en-IN')}</Text></Group>
-          </Paper>
+          <Divider my='md'/>
 
           <Group justify="end">
-            <Button variant="outline" color="gray" onClick={() => setFormOpen(false)}>Cancel / Exit View</Button>
-            <Button variant="light" color="blue">Save Blueprint Draft</Button>
-            <Button color="green" leftSection={<IconCheck size={16} />} onClick={() => setFormOpen(false)}>Commit & Finalize Record</Button>
+            <Button variant="outline" color="brandOrange.6" onClick={() => setFormOpen(false)}>Cancel</Button>
+            <Button variant="light" color="brandOrange">Save Draft</Button>
+            <Button color="brandOrange" leftSection={<IconCheck size={16} />} onClick={() => setFormOpen(false)}>Finalize</Button>
           </Group>
         </Container>
       </Modal>
 
-      {/* 2. Manual External Validation Processing Terminal (Modal) */}
+      {/* 2. Decision Outcome Action Modal */}
       <Modal
         opened={decisionOpen}
         onClose={() => setDecisionOpen(false)}
@@ -619,7 +619,7 @@ export default function SalesModule() {
         </Group>
       </Modal>
 
-      {/* 3. Historical Version Control Ledger (Modal) */}
+      {/* 3. Version Control Ledger Modal */}
       <Modal
         opened={historyOpen}
         onClose={() => setHistoryOpen(false)}
@@ -634,7 +634,7 @@ export default function SalesModule() {
               bullet={hist.status === 'Accepted' ? <IconCheck size={12} /> : <IconAlertCircle size={12} />} 
               title={`Revision Version ${hist.version} [${hist.status}]`}
             >
-              <Text size="sm" fw={700} c="blue" mt={4}>₹{hist.value.toLocaleString('en-IN')}</Text>
+              <Text size="sm" fw={700} c="brandOrange" mt={4}>{formatOMR(hist.value)}</Text>
               <Text size="xs" c="dimmed" mt={2}>Processed on {hist.date} by {hist.createdBy}</Text>
               <Text size="sm" style={{ fontStyle: 'italic' }} mt={6}>Rationale: "{hist.reason}"</Text>
               <Button size="xs" variant="subtle" mt="sm" leftSection={<IconEye size={12} />}>View Snapshot State</Button>
@@ -643,7 +643,7 @@ export default function SalesModule() {
         </Timeline>
       </Modal>
 
-      {/* 4. Liquidity Inflow Execution Entry (Modal) */}
+      {/* 4. Liquidity Inflow Entry Modal */}
       <Modal
         opened={paymentOpen}
         onClose={() => setPaymentOpen(false)}
@@ -653,7 +653,7 @@ export default function SalesModule() {
       >
         <Grid gap="sm">
           <Grid.Col span={12}><Select label="Target Contract Milestone" placeholder="Choose asset category trigger" data={['Mobilization & Initial Advance', 'Superstructure Slab Cast Target Completion', 'Handover Clearance & Final Commissioning']} /></Grid.Col>
-          <Grid.Col span={12}><NumberInput label="Net Cleared Liquid Value (INR)" prefix="₹" placeholder="Enter amount received" required /></Grid.Col>
+          <Grid.Col span={12}><NumberInput label="Net Cleared Liquid Value (OMR)" prefix="ر.ع. " decimalScale={3} placeholder="Enter amount received" required /></Grid.Col>
           <Grid.Col span={6}><Select label="Routing Channel" placeholder="Route type" data={['NEFT Transfer', 'RTGS Network', 'Corporate Cheque', 'Escrow Account Drop']} /></Grid.Col>
           <Grid.Col span={6}><TextInput label="Interbank Trace Ref ID" placeholder="e.g. UTR Number" /></Grid.Col>
           <Grid.Col span={12}><TextInput label="Settlement Execution Date" type="date" defaultValue={new Date().toISOString().split('T')[0]} /></Grid.Col>
@@ -665,7 +665,7 @@ export default function SalesModule() {
         </Group>
       </Modal>
 
-      {/* 5. System Invoice Document Render Workspace (Modal) */}
+      {/* 5. Invoice Document Render Modal */}
       <Modal
         opened={receiptOpen}
         onClose={() => setReceiptOpen(false)}
@@ -711,7 +711,7 @@ export default function SalesModule() {
               <Table.Tbody>
                 <Table.Tr>
                   <Table.Td>Settlement balance tracking item against active progress milestones</Table.Td>
-                  <Table.Td style={{ textAlign: 'right', fontWeight: 'bold' }}>₹{selectedReceipt.amt.toLocaleString('en-IN')}</Table.Td>
+                  <Table.Td style={{ textAlign: 'right', fontWeight: 'bold' }}>{formatOMR(selectedReceipt.amt)}</Table.Td>
                 </Table.Tr>
               </Table.Tbody>
             </Table>

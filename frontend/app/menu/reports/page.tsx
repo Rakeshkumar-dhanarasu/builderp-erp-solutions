@@ -69,7 +69,7 @@ export default function ReportsModule() {
             <Text size="sm" c="dimmed">Cross-examine ledger matrices and structural metrics aggregated across modules.</Text>
           </div>
           <Group gap="xs">
-            <Button size="sm" variant="outline" color="gray" leftSection={<IconRotate size={18} />}>Reset Filters</Button>
+            <Button size="sm" variant="outline" leftSection={<IconRotate size={18} />}>Reset Filters</Button>
             <Button size="sm" variant="light" leftSection={<IconPrinter size={18} />}>Print Master Dashboard</Button>
           </Group>
         </Group>
@@ -94,13 +94,13 @@ export default function ReportsModule() {
             <Select label="Supply Vector" placeholder="Select Vendor" data={['Ambuja Cements', 'Jindal Steel']} clearable />
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 6, md: 2 }}>
-            <Button fullWidth color="blue" leftSection={<IconFilter size={16} />}>Generate</Button>
+            <Button fullWidth variant='light' leftSection={<IconFilter size={16} />}>Generate</Button>
           </Grid.Col>
         </Grid>
       </Card>
 
       {/* Navigation Layer */}
-      <Tabs value={activeTab} onChange={setActiveTab} color='#DC7B0A' variant="pills" radius="md">
+      <Tabs value={activeTab} onChange={setActiveTab} variant="pills" radius="md">
         <Tabs.List mb="lg">
           <Tabs.Tab value="stakeholders" leftSection={<IconUsers size={16} />}>Stakeholder Reports</Tabs.Tab>
           <Tabs.Tab value="purchase" leftSection={<IconShoppingCart size={16} />}>Purchase Reports</Tabs.Tab>
@@ -390,7 +390,7 @@ function ReportTableSection({ title, headers, rows, badgeColIndex, onView }: Rep
     <Card withBorder radius="md" p="md" mt="md">
       <Group justify="between" mb="md">
         <Text fw={700} size="sm" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <IconChartPie size={16} color="var(--mantine-color-blue-6)" /> {title}
+          <IconChartPie size={16} color="var(--mantine-color-brandOrange-filled)" /> {title}
         </Text>
         <Group gap="xs">
           <Menu shadow="md">
