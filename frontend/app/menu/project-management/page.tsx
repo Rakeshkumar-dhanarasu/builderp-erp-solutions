@@ -78,7 +78,7 @@ const MOCK_PROJECTS: Project[] = [
     projectManager: 'Arjun Mehta',
     startDate: '2026-01-15',
     expectedCompletion: '2026-12-20',
-    budgetAmount: 20000000,
+    budgetAmount: 7836.22,
     budgetUsedPct: 68,
     status: 'In Progress',
     type: 'Commercial Real Estate',
@@ -93,7 +93,7 @@ const MOCK_PROJECTS: Project[] = [
     projectManager: 'Sarah Dsouza',
     startDate: '2025-08-10',
     expectedCompletion: '2026-10-15',
-    budgetAmount: 45000000,
+    budgetAmount: 18096,
     budgetUsedPct: 91,
     status: 'Delayed',
     type: 'Residential High-Rise',
@@ -125,6 +125,9 @@ const MOCK_ACTIVITIES = [
   { date: '2026-07-18', activity: 'Core Foundation Slab Casting Phase 2', status: 'Completed', actionReq: 'None', owner: 'Arjun Mehta', remarks: 'Passed quality inspections successfully.' },
   { date: '2026-07-15', activity: 'MEP Clearance Review Gate 1', status: 'Delayed', actionReq: 'Approval needed from local zoning authority', owner: 'Sarah Dsouza', remarks: 'Awaiting structural sign-off.' }
 ];
+
+const formatOMR = (val: number) =>
+  new Intl.NumberFormat('en-OM', { style: 'currency', currency: 'OMR' }).format(val);
 
 // ============================================================================
 // MAIN COMPONENT MATCHING YOUR EXACT LAYOUT & SPACING
@@ -334,7 +337,7 @@ export default function ProjectManagementModule() {
                               <Text size="10px" c="orange">Exp: {proj.expectedCompletion}</Text>
                             </Stack>
                           </Table.Td>
-                          <Table.Td style={{ textAlign: 'right' }}><Text size="sm" fw={600} suppressHydrationWarning>₹{(proj.budgetAmount).toLocaleString('en-IN')}</Text></Table.Td>
+                          <Table.Td style={{ textAlign: 'right' }}><Text size="sm" fw={600} suppressHydrationWarning>ر.ع. {proj.budgetAmount}</Text></Table.Td>
                           <Table.Td style={{ minWidth: 100 }}>
                             <Group gap={4} mb={2} justify="space-between">
                               <Text size="10px" fw={600}>{proj.budgetUsedPct}%</Text>
