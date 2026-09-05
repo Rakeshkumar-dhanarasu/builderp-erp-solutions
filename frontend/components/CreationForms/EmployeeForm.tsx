@@ -39,7 +39,7 @@ export function EmployeeForm({ isEditing }: FormProps) {
         />
         <Select 
           label="Department Unit" 
-          data={["Project Management", "Site Operations", "Quality Control", "Finance & HR"]} 
+          data={["Project Management", "Finance", "Sales", "Purchase",'Administration']} 
           placeholder="Select Department"
           clearable
         />

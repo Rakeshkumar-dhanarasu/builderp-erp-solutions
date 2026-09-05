@@ -422,7 +422,7 @@ export default function StakeholdersManagement() {
                       <Group gap="xs" mt={4}>
                         <ThemeIcon size="xs" color="brandOrange" variant="light"><IconCurrencyDollar size={10} /></ThemeIcon>
                         <Text size="xs" fw={500} c="brandOrange">
-                          {activeStk.type === "Customer" && `Credit Limit Bound: $${activeStk.creditLimit?.toLocaleString()}`}
+                          {activeStk.type === "Customer" && `Credit Limit Bound: $${activeStk.creditLimit?.toLocaleString('en-IN')}`}
                           {activeStk.type === "Supplier" && `Material Sourcing: ${activeStk.materialServiceType}`}
                           {activeStk.type === "Sub-contractor" && `Specialization Node: ${activeStk.specialization}`}
                           {activeStk.type === "Employee" && `Designation: ${activeStk.role} (${activeStk.department})`}

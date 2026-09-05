@@ -117,8 +117,8 @@ const MOCK_ALLOC_HISTORY = [
 ];
 
 const MOCK_TRANSACTIONS = [
-  { date: '2026-07-01', type: 'Purchase Order', ref: 'PO-2026-8812', desc: 'Procurement of structural foundation aggregate mix', amount: 450000, status: 'Settled' },
-  { date: '2026-07-08', type: 'Sub-contractor Pay', ref: 'SC-PAY-4410', desc: 'Milestone 2 Slab Clearance Payment', amount: 1200000, status: 'Settled' }
+  { date: '2026-07-01', type: 'Purchase Order', ref: 'PO-2026-8812', desc: 'Procurement of structural foundation aggregate mix', amount: 176.31, status: 'Settled' },
+  { date: '2026-07-08', type: 'Sub-contractor Pay', ref: 'SC-PAY-4410', desc: 'Milestone 2 Slab Clearance Payment', amount: 470.17, status: 'Settled' }
 ];
 
 const MOCK_ACTIVITIES = [
@@ -405,19 +405,19 @@ export default function ProjectManagementModule() {
                 <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
                   <Paper withBorder p="md" radius="md">
                     <Text size="xs" fw={600} c="dimmed">TOTAL APPROVED BUDGET</Text>
-                    <Text size="lg" fw={700} my={4} suppressHydrationWarning>₹{(selectedProject.budgetAmount).toLocaleString('en-IN')}</Text>
+                    <Text size="lg" fw={700} my={4} suppressHydrationWarning> ر.ع.{(selectedProject.budgetAmount).toLocaleString('en-OM')}</Text>
                     <Text size="10px" c="dimmed">Approved from Sales module quotation</Text>
                   </Paper>
 
                   <Paper withBorder p="md" radius="md">
                     <Text size="xs" fw={600} c="dimmed">AMOUNT USED</Text>
-                    <Text size="lg" fw={700} c="orange" my={4} suppressHydrationWarning>₹{((selectedProject.budgetAmount * selectedProject.budgetUsedPct) / 100).toLocaleString('en-IN')}</Text>
+                    <Text size="lg" fw={700} c="orange" my={4} suppressHydrationWarning> ر.ع.{((selectedProject.budgetAmount * selectedProject.budgetUsedPct) / 100).toLocaleString('en-OM')}</Text>
                     <Text size="10px" c="dimmed">Total consumption to date</Text>
                   </Paper>
 
                   <Paper withBorder p="md" radius="md">
                     <Text size="xs" fw={600} c="dimmed">REMAINING BUDGET</Text>
-                    <Text size="lg" fw={700} c="green" my={4} suppressHydrationWarning>₹{(selectedProject.budgetAmount - (selectedProject.budgetAmount * selectedProject.budgetUsedPct) / 100).toLocaleString('en-IN')}</Text>
+                    <Text size="lg" fw={700} c="green" my={4} suppressHydrationWarning> ر.ع.{(selectedProject.budgetAmount - (selectedProject.budgetAmount * selectedProject.budgetUsedPct) / 100).toLocaleString('en-OM')}</Text>
                     <Group gap={4} mt={2}>
                       <RingProgress size={20} thickness={3} sections={[{ value: selectedProject.budgetUsedPct, color: 'blue' }]} />
                       <Text size="10px" fw={600}>{100 - selectedProject.budgetUsedPct}% Available</Text>
@@ -429,9 +429,9 @@ export default function ProjectManagementModule() {
                   <Text fw={600} size="sm" mb="md">Budget Breakdown</Text>
                   <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
                     {[
-                      { title: 'Material Cost', alloc: '₹80,00,000', consumed: '₹55,00,000', pct: 68 },
-                      { title: 'Sub-contractor Cost', alloc: '₹1,00,00,000', consumed: '₹75,00,000', pct: 75 },
-                      { title: 'Other Expenses', alloc: '₹20,00,000', consumed: '₹6,00,000', pct: 30 }
+                      { title: 'Material Cost', alloc: 'ر.ع. 3,134.49', consumed: 'ر.ع. 2,154.96', pct: 68.75 },
+                      { title: 'Sub-contractor Cost', alloc: 'ر.ع. 3,918.11', consumed: 'ر.ع. 2,938.58', pct: 75 },
+                      { title: 'Other Expenses', alloc: 'ر.ع. 783.62', consumed: 'ر.ع. 235.09', pct: 30 }
                     ].map((b, i) => (
                       <Paper p="sm" bg="var(--mantine-color-default-hover)" radius="md" key={i}>
                         <Text size="xs" fw={600}>{b.title}</Text>
@@ -465,7 +465,7 @@ export default function ProjectManagementModule() {
                             <Table.Td><Badge size="xs" color="gray">{t.type}</Badge></Table.Td>
                             <Table.Td><Text size="xs" style={{ fontFamily: 'monospace' }}>{t.ref}</Text></Table.Td>
                             <Table.Td><Text size="xs" c="dimmed">{t.desc}</Text></Table.Td>
-                            <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600} c="red" suppressHydrationWarning>- ₹{t.amount.toLocaleString('en-IN')}</Text></Table.Td>
+                            <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={600} c="red" suppressHydrationWarning>- ر.ع.{t.amount.toLocaleString('en-OM')}</Text></Table.Td>
                             <Table.Td>{renderStatusBadge(t.status)}</Table.Td>
                           </Table.Tr>
                         ))}
@@ -508,7 +508,7 @@ export default function ProjectManagementModule() {
                     <Grid.Col span={6}><Text size="11px" c="dimmed">Customer:</Text><Text size="xs" fw={600}>{selectedProject.customer}</Text></Grid.Col>
                     <Grid.Col span={6}><Text size="11px" c="dimmed">Status:</Text><div>{renderStatusBadge(selectedProject.status)}</div></Grid.Col>
                     <Grid.Col span={6}><Text size="11px" c="dimmed">Timeline:</Text><Text size="xs" fw={600}>{selectedProject.startDate} to {selectedProject.expectedCompletion}</Text></Grid.Col>
-                    <Grid.Col span={6}><Text size="11px" c="dimmed">Approved Budget:</Text><Text size="xs" fw={600} suppressHydrationWarning>₹{selectedProject.budgetAmount.toLocaleString('en-IN')}</Text></Grid.Col>
+                    <Grid.Col span={6}><Text size="11px" c="dimmed">Approved Budget:</Text><Text size="xs" fw={600} suppressHydrationWarning> ر.ع.{selectedProject.budgetAmount.toLocaleString('en-OM')}</Text></Grid.Col>
                   </Grid>
 
                   <Divider my="md" />
