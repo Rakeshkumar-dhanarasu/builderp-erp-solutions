@@ -1,0 +1,9 @@
+# Database
+spring.datasource.url=jdbc:postgresql://localhost:5432/mydb
+spring.datasource.username=<your_username>
+spring.datasource.password=<your_password>
+
+# JPA
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true

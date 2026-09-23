@@ -37,3 +37,7 @@ frontend/.pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 node_modules
+
+.metadata
+backend/pms/logs
+backend/pms/src/main/resources/application.properties

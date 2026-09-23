@@ -1,0 +1,894 @@
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="en">
+
+<head>
+<meta charset="UTF-8" />
+<title>Quotation</title>
+
+<style>
+
+/* ============================================================
+   PAGE
+   ============================================================ */
+
+@page {
+    size: A4;
+    margin: 43mm 13mm 32mm 13mm;
+
+    @top-center {
+        content: element(pageHeader);
+    }
+
+    @bottom-center {
+        content: element(pageFooter);
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 9.5pt;
+    color: #334155;
+    background: #ffffff;
+}
+
+body {
+    line-height: 1.45;
+}
+
+/* ============================================================
+   RUNNING HEADER
+   ============================================================ */
+
+.page-header {
+    position: running(pageHeader);
+    width: 210mm;
+    height: 43mm;
+    margin-left: -13mm;
+    margin-top: 0;
+    z-index: 10;
+}
+
+.page-header img {
+    display: block;
+    width: 210mm;
+    height: auto;
+}
+
+/* ============================================================
+   RUNNING FOOTER
+   ============================================================ */
+
+.page-footer {
+    position: running(pageFooter);
+    width: 210mm;
+    height: 32mm;
+    margin-left: -13mm;
+    margin-bottom: 0;
+    z-index: 10;
+}
+
+.page-footer img {
+    display: block;
+    width: 210mm;
+    height: auto;
+}
+
+/* ============================================================
+   WATERMARK
+   ============================================================ */
+
+.watermark-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 110mm;
+    height: 110mm;
+    margin-left: -55mm;
+    margin-top: -55mm;
+    z-index: 0;
+    text-align: center;
+}
+
+.watermark-logo {
+    display: block;
+    width: 95mm;
+    max-width: 95mm;
+    height: auto;
+    margin: 0 auto;
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+
+.content {
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: transparent;
+}
+
+/* ============================================================
+   HEADER BANNER
+   ============================================================ */
+
+.header-banner {
+    position: relative;
+    z-index: 2;
+    background-color: #754002;
+    color: #ffffff;
+    padding: 24px;
+}
+
+.header-top {
+    display: table;
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+.company-info {
+    display: table-cell;
+    width: 60%;
+    vertical-align: top;
+}
+
+.company-name {
+    font-size: 16pt;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+}
+
+.company-details {
+    font-size: 8.5pt;
+    color: #FFF3E0;
+    line-height: 1.4;
+}
+
+.billed-to {
+    display: table-cell;
+    width: 40%;
+    vertical-align: top;
+    text-align: left;
+    padding-left: 20px;
+}
+
+.billed-label {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #FFE0B2;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.client-name {
+    font-size: 11pt;
+    font-weight: 700;
+    margin-bottom: 3px;
+}
+
+.client-details {
+    font-size: 8.5pt;
+    color: #FFF3E0;
+    line-height: 1.4;
+}
+
+.meta-bar {
+    display: table;
+    width: 100%;
+    padding-top: 16px;
+    border-top: 1px solid #b8946d;
+}
+
+.meta-item {
+    display: table-cell;
+    vertical-align: top;
+}
+
+.meta-label {
+    font-size: 7.5pt;
+    color: #FFE0B2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+}
+
+.meta-value {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* ============================================================
+   BODY
+   ============================================================ */
+
+.body-container {
+    position: relative;
+    z-index: 1;
+    padding: 20px 24px;
+    background-color: transparent;
+}
+
+/* ============================================================
+   SUBJECT
+   ============================================================ */
+
+.subject-container {
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background-color: #fff7ed;
+    border-left: 3px solid #DC7B0A;
+    border-radius: 0 4px 4px 0;
+}
+
+.subject-label {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    color: #9A5A08;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.subject-text {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #1e293b;
+    margin-top: 2px;
+}
+
+/* ============================================================
+   INTRODUCTION
+   ============================================================ */
+
+.intro-text {
+    font-size: 9pt;
+    color: #475569;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* ============================================================
+   BOQ
+   ============================================================ */
+
+.boq-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 3;
+    background-color: #ffffff;
+}
+
+.boq-table thead {
+    display: table-header-group;
+}
+
+.boq-table th {
+    background-color: #fff3e0;
+    color: #8A4B05;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 8px;
+    border-bottom: 1px solid #F2C078;
+}
+
+.boq-table td {
+    background-color: #ffffff;
+}
+
+.boq-task-row td {
+    background-color: #fff7ed;
+    font-weight: 700;
+    color: #7C4204;
+    font-size: 9pt;
+    padding: 8px;
+    border-bottom: 1px solid #F2D2A2;
+}
+
+.boq-item-row td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    font-size: 9pt;
+    color: #334155;
+    vertical-align: top;
+    background-color: #ffffff;
+}
+
+.boq-item-row:nth-child(even) td {
+    background-color: #fffcf8;
+}
+
+.col-no {
+    width: 6%;
+    text-align: center;
+    color: #9A5A08;
+}
+
+.col-desc {
+    width: 50%;
+    text-align: left;
+}
+
+.col-qty {
+    width: 14%;
+    text-align: center;
+}
+
+.col-rate {
+    width: 15%;
+    text-align: right;
+}
+
+.col-amount {
+    width: 15%;
+    text-align: right;
+    font-weight: 600;
+    color: #7C4204;
+}
+
+/* ============================================================
+   BOTTOM GRID
+   ============================================================ */
+
+.bottom-grid {
+    display: table;
+    width: 100%;
+    margin-top: 10px;
+    position: relative;
+    z-index: 2;
+}
+
+.left-col {
+    display: table-cell;
+    width: 55%;
+    vertical-align: top;
+    padding-right: 20px;
+}
+
+.right-col {
+    display: table-cell;
+    width: 45%;
+    vertical-align: top;
+}
+
+/* ============================================================
+   SECTION TITLES
+   ============================================================ */
+
+.section-title {
+    font-size: 8pt;
+    font-weight: 700;
+    color: #DC7B0A;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+    margin-top: 14px;
+}
+
+.section-title:first-child {
+    margin-top: 0;
+}
+
+/* ============================================================
+   TERMS
+   ============================================================ */
+
+.terms-list {
+    font-size: 8.5pt;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.term-row {
+    margin-bottom: 4px;
+}
+
+.term-key {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* ============================================================
+   TOTALS
+   ============================================================ */
+
+.totals-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+}
+
+.totals-table td {
+    padding: 6px 0;
+    font-size: 9pt;
+    background-color: #ffffff;
+}
+
+.total-label-cell {
+    color: #64748b;
+    text-align: left;
+}
+
+.total-val-cell {
+    text-align: right;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.grand-total-box {
+    background-color: #754002;
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-top: 8px;
+}
+
+.grand-total-box td {
+    padding: 0;
+    color: #ffffff;
+    background-color: #754002;
+}
+
+.grand-total-box .total-label-cell {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 9.5pt;
+}
+
+.grand-total-box .total-val-cell {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 12pt;
+}
+
+/* ============================================================
+   AMOUNT IN WORDS
+   ============================================================ */
+
+.amount-in-words-card {
+    margin-top: 14px;
+    padding: 10px;
+    background-color: #fff7ed;
+    border: 1px solid #F2D2A2;
+    border-radius: 6px;
+    font-size: 8.5pt;
+    color: #334155;
+}
+
+.words-label {
+    font-weight: 700;
+    color: #8A4B05;
+    display: block;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    font-size: 7.5pt;
+    letter-spacing: 0.4px;
+}
+
+/* ============================================================
+   SIGNATURE
+   ============================================================ */
+
+.signature-block {
+    margin-top: 24px;
+    page-break-inside: avoid;
+    position: relative;
+    z-index: 2;
+}
+
+.sig-company {
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 30px;
+}
+
+.sig-line {
+    width: 140px;
+    border-top: 1px solid #cbd5e1;
+    margin-bottom: 6px;
+}
+
+.sig-name {
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.sig-title {
+    font-size: 8.5pt;
+    color: #64748b;
+}
+
+/* ============================================================
+   GENERAL
+   ============================================================ */
+
+.avoid-break {
+    page-break-inside: avoid;
+}
+
+.page-break-before {
+    page-break-before: always;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ================================================================
+     RUNNING HEADER
+     ================================================================ -->
+
+<div class="page-header">
+    <img src="images/header.png" alt="Company Header" />
+</div>
+
+<!-- ================================================================
+     RUNNING FOOTER
+     ================================================================ -->
+
+<div class="page-footer">
+    <img src="images/footer.png" alt="Company Footer" />
+</div>
+
+<!-- ================================================================
+     WATERMARK
+     ================================================================ -->
+
+<div class="watermark-container">
+    <img class="watermark-logo"
+         src="images/logo-blur.png"
+         alt="Watermark" />
+</div>
+
+<!-- ================================================================
+     MAIN CONTENT
+     ================================================================ -->
+
+<div class="content">
+
+    <div class="header-banner">
+        <div class="header-top">
+
+            <div class="company-info">
+                <div class="company-name">
+                    QUOTATION
+                </div>
+
+                <div class="company-details">
+                    AL MAHROOQI INTERNATIONAL LLC<br />
+                    Interior &amp; Decoration
+                </div>
+            </div>
+
+            <div class="billed-to">
+
+                <div class="billed-label">
+                    Prepared For
+                </div>
+
+                <div class="client-name"
+                     th:text="${quotation.customer}">
+                    Customer Name
+                </div>
+
+                <div class="client-details"
+                     th:text="${quotation.siteAddress}">
+                    Site Address Details
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="meta-bar">
+
+            <div class="meta-item">
+                <div class="meta-label">
+                    Quotation #
+                </div>
+
+                <div class="meta-value"
+                     th:text="${quotation.quotationId}">
+                    QT-2026-001
+                </div>
+            </div>
+
+            <div class="meta-item">
+                <div class="meta-label">
+                    Date
+                </div>
+
+                <div class="meta-value"
+                     th:text="${formattedDraftDate}">
+                    21 Sep 2026
+                </div>
+            </div>
+
+            <div class="meta-item">
+                <div class="meta-label">
+                    Total Amount
+                </div>
+
+                <div class="meta-value"
+                     th:text="${(quotation.currencyCode ?: 'OMR') + ' ' + quotation.total}">
+                    OMR 0.000
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="body-container">
+
+        <div class="subject-container"
+             th:if="${quotation.addComments != null}">
+
+            <div class="subject-label">
+                Subject
+            </div>
+
+            <div class="subject-text"
+                 th:text="${quotation.addComments}">
+                Quotation Subject Description
+            </div>
+
+        </div>
+
+        <div class="intro-text">
+            Dear Sir/Madam,<br />
+            We thank you for inviting us to quote for the above and are pleased to offer our competitive prices for the following scope of work:
+        </div>
+
+        <table class="boq-table">
+
+            <thead>
+            <tr>
+
+                <th class="col-no">
+                    No.
+                </th>
+
+                <th class="col-desc">
+                    Description
+                </th>
+
+                <th class="col-qty">
+                    Qty.
+                </th>
+
+                <th class="col-rate">
+                    Rate
+                </th>
+
+                <th class="col-amount">
+                    Amount
+                </th>
+
+            </tr>
+            </thead>
+
+            <tbody>
+
+            <th:block th:each="item : ${quotation.tasks}">
+
+                <tr class="boq-task-row"
+                    th:if="${taskHeaderNumbers.containsKey(item.utid)}">
+
+                    <td class="col-no"
+                        th:text="${taskHeaderNumbers[item.utid]}">
+                        1
+                    </td>
+
+                    <td colspan="4"
+                        class="col-desc"
+                        th:text="${item.taskName}">
+                        Task Name Header
+                    </td>
+
+                </tr>
+
+                <tr class="boq-item-row">
+
+                    <td class="col-no"
+                        th:text="${subTaskNumbers[item.utid]}">
+                        1.1
+                    </td>
+
+                    <td class="col-desc"
+                        th:text="${item.subTaskName}">
+                        Item description goes here
+                    </td>
+
+                    <td class="col-qty"
+                        th:text="${item.quantity + ' ' + item.unit}">
+                        1 Unit
+                    </td>
+
+                    <td class="col-rate"
+                        th:text="${item.unitCost}">
+                        0.000
+                    </td>
+
+                    <td class="col-amount"
+                        th:text="${item.price}">
+                        0.000
+                    </td>
+
+                </tr>
+
+            </th:block>
+
+            </tbody>
+        </table>
+
+        <div class="bottom-grid avoid-break">
+
+            <div class="left-col">
+
+                <div class="section-title">
+                    Terms &amp; Conditions
+                </div>
+
+                <div class="terms-list">
+
+                    <div class="term-row">
+                        <span class="term-key">Payment:</span>
+                        40% Advance, 25% midway and balance immediately after completion.
+                    </div>
+
+                    <div class="term-row">
+                        <span class="term-key">Completion:</span>
+                        To be discussed.
+                    </div>
+
+                    <div class="term-row">
+                        <span class="term-key">Validity:</span>
+                        30 Days.
+                    </div>
+
+                    <div class="term-row">
+                        <span class="term-key">Others:</span>
+                        Any kind of additional works will be charged separately.
+                    </div>
+
+                    <div class="term-row">
+                        <span class="term-key">Excluded:</span>
+                        Rolling Shutter, Sign board, Server units, EPBX systems, Telephones and CCTV cameras and Systems, Fire Fighting works.
+                    </div>
+
+                </div>
+
+                <div class="section-title" style="margin-top: 14px;">
+                    Additional Notes
+                </div>
+
+                <div style="font-size: 8.5pt; color: #64748b; line-height: 1.4;">
+                    We trust our offer is in line with your requirement and look forward to receiving your valued order. Assuring our best services at all times.
+                </div>
+
+            </div>
+
+            <div class="right-col">
+
+                <table class="totals-table">
+
+                    <tr>
+                        <td class="total-label-cell">
+                            Sub Total (
+                            <span th:text="${quotation.currencyCode}">
+                                OMR
+                            </span>
+                            )
+                        </td>
+
+                        <td class="total-val-cell"
+                            th:text="${quotation.marketPrice}">
+                            0.000
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="total-label-cell">
+                            VAT (
+                            <span th:text="${quotation.taxPercent}">
+                                0
+                            </span>
+                            %)
+                        </td>
+
+                        <td class="total-val-cell"
+                            th:text="${quotation.total - quotation.marketPrice}">
+                            0.000
+                        </td>
+                    </tr>
+
+                </table>
+
+                <div class="grand-total-box">
+
+                    <table class="totals-table">
+
+                        <tr>
+
+                            <td class="total-label-cell">
+                                Total Due (
+                                <span th:text="${quotation.currencyCode}">
+                                    OMR
+                                </span>
+                                )
+                            </td>
+
+                            <td class="total-val-cell"
+                                th:text="${quotation.total}">
+                                0.000
+                            </td>
+
+                        </tr>
+
+                    </table>
+
+                </div>
+
+                <div class="amount-in-words-card">
+
+                    <span class="words-label">
+                        Amount in Words
+                    </span>
+
+                    <div>
+                        Four thousand one hundred eighty-three Omani Rials and two hundred Baisa
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="signature-block">
+
+            <div class="sig-company">
+                For AL MAHROOQI INTERNATIONAL LLC
+            </div>
+
+            <div class="sig-line"></div>
+
+            <div class="sig-name">
+                N. SELVAM
+            </div>
+
+            <div class="sig-title">
+                General Manager
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
+

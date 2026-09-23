@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Paper,
   Title,
@@ -20,20 +20,14 @@ import {
   Avatar,
   SimpleGrid,
   Alert,
-  Tooltip,
   Divider,
-  NumberInput,
-  Textarea,
-  Drawer,
   Modal,
-  Pagination,
   Menu,
-  ThemeIcon
+  ThemeIcon,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
   IconSearch,
-  IconUserCheck,
   IconUsers,
   IconBuildingStore,
   IconCone2,
@@ -42,557 +36,1410 @@ import {
   IconEdit,
   IconTrash,
   IconBan,
-  IconCheck,
   IconPhone,
   IconMail,
   IconMapPin,
   IconFilter,
   IconDotsVertical,
   IconNotes,
-  IconCurrencyDollar,
   IconAlertCircle,
-  IconBadge
+  IconBadge,
+  IconCheck,
 } from "@tabler/icons-react";
 
-import { CustomerForm } from '@/components/CreationForms/CustomerForm';
-import { SupplierForm } from '@/components/CreationForms/SupplierForm';
-import { SubContractorForm } from '@/components/CreationForms/SubContractorForm';
-import { EmployeeForm } from '@/components/CreationForms/EmployeeForm';
-import { DocumentUpload } from '@/components/FilesUpload';
+import {
+  StakeholderForm,
+  initialStakeholderFormData,
+  StakeholderFormData,
+} from "@/components/CreationForms/StakeholderForm";
+import { DocumentUpload } from "@/components/FilesUpload";
+import {
+  createStakeholder,
+  getStakeholdersByType,
+  getStakeholderById,
+  updateStakeholder,
+  updateStakeholderStatus,
+  deleteStakeholder,
+  CreateStakeholderRequest,
+  StakeholderCategory,
+  StakeholderListResponse,
+  StakeholderDetailResponse,
+  EmployeeDesignation,
+  EmployeeDepartment,
+  EmployeePayroll,
+} from "@/services/stakeholderService";
 
-// Stakeholder Data Structure Interface Definition
+/* =========================================================
+   UI TYPES
+   ========================================================= */
+
 interface Stakeholder {
   id: string;
   type: "Customer" | "Supplier" | "Sub-contractor" | "Employee";
   name: string;
-  contactPerson: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   altPhone: string;
   email: string;
-  addressLine1: string;
-  addressLine2: string;
   city: string;
   state: string;
   country: string;
   postalCode: string;
-  status: string;
-  createdDate: string;
-  notes: string;
-  paymentTerms: string;
-  dependentTransactions: number;
-  // Type-Specific Optional Attributes
-  customerCategory?: string;
-  creditLimit?: number;
-  SupplierCategory?: string;
-  materialServiceType?: string;
-  workCategory?: string;
-  specialization?: string;
-  role?: string;
-  department?: string;
+  status: "Active" | "Inactive";
 }
 
-// Multi-Tenant Unified Relational Enterprise Mock Schema
-const initialStakeholders: Stakeholder[] = [
-  {
-    id: "STK-C001",
-    type: "Customer",
-    name: "Vertex Infrastructure Group",
-    contactPerson: "Marcus Vance",
-    phone: "+1 (555) 234-5678",
-    altPhone: "+1 (555) 234-5679",
-    email: "m.vance@vertexgrp.com",
-    addressLine1: "789 Corporate Parkway",
-    addressLine2: "Suite 400",
-    city: "Chicago",
-    state: "Illinois",
-    country: "USA",
-    postalCode: "60601",
-    status: "Active",
-    createdDate: "Feb 14, 2025",
-    notes: "Primary Tier-1 infrastructure client. Fast track payment approvals verified.",
-    customerCategory: "Commercial Developer",
-    paymentTerms: "Net 30",
-    creditLimit: 500000,
-    dependentTransactions: 4
-  },
-  {
-    id: "STK-V002",
-    type: "Supplier",
-    name: "Titan ReadyMix & Aggregate",
-    contactPerson: "Elena Rostova",
-    phone: "+1 (555) 876-5432",
-    altPhone: "",
-    email: "orders@titanconcrete.com",
-    addressLine1: "12 Industrial Supply Way",
-    addressLine2: "Yard 4B",
-    city: "Gary",
-    state: "Indiana",
-    country: "USA",
-    postalCode: "46401",
-    status: "Active",
-    createdDate: "May 22, 2025",
-    notes: "Preferred heavy concrete material Supplier across midwest sector sites.",
-    SupplierCategory: "Material Supplier",
-    materialServiceType: "High-Strength Structural Concrete",
-    paymentTerms: "Net 45",
-    dependentTransactions: 12
-  },
-  {
-    id: "STK-S003",
-    type: "Sub-contractor",
-    name: "Apex Mechanical & HVAC Systems",
-    contactPerson: "David Miller",
-    phone: "+1 (555) 432-1098",
-    altPhone: "+1 (555) 432-1000",
-    email: "d.miller@apexmech.io",
-    addressLine1: "54 Northwest Highway",
-    addressLine2: "",
-    city: "Schaumburg",
-    state: "Illinois",
-    country: "USA",
-    postalCode: "60173",
-    status: "Inactive",
-    createdDate: "Nov 08, 2025",
+/* =========================================================
+   TYPE MAPPINGS
+   ========================================================= */
 
-    notes: "Requires mandatory safety clearance re-certification before field deployment routing.",
-    workCategory: "MEP Engineering",
-    specialization: "Industrial Chillers & Cleanroom HVAC",
-    paymentTerms: "Milestone-Based Progress",
-    dependentTransactions: 0
-  },
-  {
-    id: "STK-E002",
-    type: "Employee",
-    name: "J Jonah Jameson",
-    contactPerson: "-",
-    role: "Project Engineer",
-    phone: "+91 67903 43084",
-    altPhone: "+91 93893 34929",
-    email: "jjonahjameson@gmail.com",
-    addressLine1: "4/A, Ritchie Street",
-    addressLine2: "",
-    city: "Chennai",
-    state: "Tamil Nadu",
-    country: "India",
-    postalCode: "601603",
-    status: "Active",
-    createdDate: "Jan 02, 2025",
-    notes: "Considering hike for this employee",
-    department: "Project Management",
-    paymentTerms: "Monthly Salary",
-    dependentTransactions: 3
+const uiTypeToBackend: Record<Stakeholder["type"], StakeholderCategory> = {
+  Customer: "CUSTOMER",
+  Supplier: "SUPPLIER",
+  "Sub-contractor": "SUB_CONTRACTOR",
+  Employee: "EMPLOYEE",
+};
+
+const backendTypeToUi: Record<StakeholderCategory, Stakeholder["type"]> = {
+  CUSTOMER: "Customer",
+  SUPPLIER: "Supplier",
+  SUB_CONTRACTOR: "Sub-contractor",
+  EMPLOYEE: "Employee",
+};
+
+/* =========================================================
+   EMPLOYEE LABELS
+   ========================================================= */
+
+const designationLabels: Record<string, string> = {
+  OPERATIONAL_MANAGER: "Operational Manager",
+  STOREKEEPER: "Storekeeper",
+  FOREMAN: "Foreman",
+  PROJECT_ENGINEER: "Project Engineer",
+  ACCOUNTANT: "Accountant",
+};
+
+const departmentLabels: Record<string, string> = {
+  ADMINISTRATION: "Administration",
+  FINANCE: "Finance",
+  PURCHASE: "Purchase",
+  SALES: "Sales",
+  PROJECT_MANAGEMENT: "Project Management",
+};
+
+const payrollLabels: Record<string, string> = {
+  MONTHLY_SALARY: "Monthly Salary",
+  HOURLY_WAGES: "Hourly Wages",
+  PIECE_RATE_PAY: "Piece-rate Pay",
+};
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function formatPhone(code: number | string, phoneNumber: number | string) {
+  return `+${code} ${phoneNumber}`;
+}
+
+/* =========================================================
+   LIST RESPONSE → UI
+   ========================================================= */
+
+function mapStakeholderToUi(stakeholder: StakeholderListResponse): Stakeholder {
+  const type = backendTypeToUi[stakeholder.stakeholderCategory];
+
+  return {
+    id: String(stakeholder.stakeholderId),
+    type,
+    name: `${stakeholder.firstName} ${stakeholder.lastName}`.trim(),
+    firstName: stakeholder.firstName,
+    lastName: stakeholder.lastName,
+    phone: formatPhone(stakeholder.primaryPhoneCode, stakeholder.primaryPhoneNum),
+    altPhone: "",
+    email: stakeholder.email,
+    city: stakeholder.city,
+    state: stakeholder.stateOrProvince || "",
+    country: stakeholder.country,
+    postalCode: stakeholder.postalCode || "",
+    status: stakeholder.active ? "Active" : "Inactive",
+  };
+}
+
+/* =========================================================
+   CREATE / UPDATE REQUEST BUILDER
+   ========================================================= */
+
+function buildCreateRequest(formData: StakeholderFormData): CreateStakeholderRequest {
+  const category = formData.stakeholderCategory as StakeholderCategory;
+
+  const request: CreateStakeholderRequest = {
+    stakeholderCategory: category,
+    firstName: formData.firstName.trim(),
+    lastName: formData.lastName.trim(),
+    primaryPhoneCode: Number(formData.primaryPhoneCode),
+    primaryPhoneNum: Number(formData.primaryPhoneNum),
+    email: formData.email.trim(),
+    primaryAddress: formData.primaryAddress.trim(),
+    city: formData.city.trim(),
+    country: formData.country.trim(),
+  };
+
+  if (formData.secondaryPhoneCode.trim() && formData.secondaryPhoneNum.trim()) {
+    request.secondaryPhoneCode = Number(formData.secondaryPhoneCode);
+    request.secondaryPhoneNum = Number(formData.secondaryPhoneNum);
   }
-];
+
+  if (formData.secondaryAddress.trim()) {
+    request.secondaryAddress = formData.secondaryAddress.trim();
+  }
+
+  if (formData.stateOrProvince.trim()) {
+    request.stateOrProvince = formData.stateOrProvince.trim();
+  }
+
+  if (formData.postalCode.trim()) {
+    request.postalCode = formData.postalCode.trim();
+  }
+
+  if (formData.extraComments.trim()) {
+    request.extraComments = formData.extraComments.trim();
+  }
+
+  if (category === "EMPLOYEE") {
+    const details = formData.employeeDetails;
+
+    if (
+      details.employeeRole &&
+      details.employeeDept &&
+      details.payrollStructure &&
+      details.salary !== null
+    ) {
+    request.employeeDetails = {
+      employeeRole: details.employeeRole as EmployeeDesignation,
+      employeeDept: details.employeeDept as EmployeeDepartment,
+      payrollStructure: details.payrollStructure as EmployeePayroll,
+      salary: Number(details.salary),
+    };
+  }
+  }
+
+  console.log("FINAL REQUEST OBJECT:", request);
+
+  return request;
+}
+
+/* =========================================================
+   COMPONENT
+   ========================================================= */
 
 export default function StakeholdersManagement() {
-  const [stakeholders, setStakeholders] = useState<Stakeholder[]>(initialStakeholders);
+  /* -------------------------------------------------------
+     LIST STATE
+     ------------------------------------------------------- */
+
+  const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [activeTab, setActiveTab] = useState<string | null>("Customer");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>("All");
-  const [selectedStkId, setSelectedStkId] = useState("STK-C001");
+  const [selectedStkId, setSelectedStkId] = useState("");
+  const [loadingStakeholders, setLoadingStakeholders] = useState(false);
+  const [stakeholderError, setStakeholderError] = useState("");
 
-  // Dynamic Modals and Operations Drawers Toggles
+  /* -------------------------------------------------------
+     DETAIL STATE
+     ------------------------------------------------------- */
+
+  const [selectedStakeholderDetail, setSelectedStakeholderDetail] =
+    useState<StakeholderDetailResponse | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState("");
+
+  /* -------------------------------------------------------
+     CREATE / EDIT MODAL
+     ------------------------------------------------------- */
+
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
-  const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
-  const [deactivateModalOpened, { open: openDeactivateModal, close: closeDeactivateModal }] = useDisclosure(false);
-
-  // Structural Form Payload Initialization State
   const [isEditing, setIsEditing] = useState(false);
   const [targetStakeholder, setTargetStakeholder] = useState<Stakeholder | null>(null);
-  const [formType, setFormType] = useState<string>("Customer");
-  
-  // Active selected row metadata lookup pointer
-  const activeStk = stakeholders.find((s) => s.id === selectedStkId) || stakeholders[0];
+  const [formData, setFormData] = useState<StakeholderFormData>(initialStakeholderFormData);
+  const [formError, setFormError] = useState("");
+  const [formSubmitting, setFormSubmitting] = useState(false);
 
-  // Pipeline Filter Node Logic Matrix
+  /* -------------------------------------------------------
+     STATUS MODAL
+     ------------------------------------------------------- */
+
+  const [
+    deactivateModalOpened,
+    { open: openDeactivateModal, close: closeDeactivateModal },
+  ] = useDisclosure(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusError, setStatusError] = useState("");
+
+  /* -------------------------------------------------------
+     DELETE MODAL
+     ------------------------------------------------------- */
+
+  const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] =
+    useDisclosure(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  /* =========================================================
+     LOAD LIST
+     ========================================================= */
+
+  const loadStakeholders = async (type: StakeholderCategory, preferredId?: number) => {
+    setLoadingStakeholders(true);
+    setStakeholderError("");
+
+    try {
+      const response = await getStakeholdersByType(type);
+      const mappedStakeholders = response.map(mapStakeholderToUi);
+
+      setStakeholders(mappedStakeholders);
+
+      if (
+        preferredId !== undefined &&
+        mappedStakeholders.some((item) => item.id === String(preferredId))
+      ) {
+        setSelectedStkId(String(preferredId));
+      } else if (mappedStakeholders.length > 0) {
+        setSelectedStkId(mappedStakeholders[0].id);
+      } else {
+        setSelectedStkId("");
+        setSelectedStakeholderDetail(null);
+      }
+    } catch (error: any) {
+      console.error("Failed to load stakeholders:", error);
+
+      const status = error?.response?.status;
+
+      if (status === 401) {
+        setStakeholderError("Your session has expired. Please log in again.");
+      } else if (status === 403) {
+        setStakeholderError("You are not authorized to view stakeholders.");
+      } else {
+        setStakeholderError("Unable to retrieve stakeholders. Please try again.");
+      }
+
+      setStakeholders([]);
+      setSelectedStkId("");
+      setSelectedStakeholderDetail(null);
+    } finally {
+      setLoadingStakeholders(false);
+    }
+  };
+
+  /* =========================================================
+     LOAD DETAIL
+     ========================================================= */
+
+  const loadStakeholderDetail = async (stakeholderId: string) => {
+    if (!stakeholderId) {
+      setSelectedStakeholderDetail(null);
+      return;
+    }
+
+    setLoadingDetail(true);
+    setDetailError("");
+
+    try {
+      const detail = await getStakeholderById(Number(stakeholderId));
+      setSelectedStakeholderDetail(detail);
+    } catch (error: any) {
+      console.error("Failed to load stakeholder detail:", error);
+
+      const status = error?.response?.status;
+
+      if (status === 404) {
+        setDetailError("Stakeholder record was not found.");
+      } else if (status === 401) {
+        setDetailError("Your session has expired. Please log in again.");
+      } else if (status === 403) {
+        setDetailError("You are not authorized to view this stakeholder.");
+      } else {
+        setDetailError("Unable to retrieve stakeholder details.");
+      }
+
+      setSelectedStakeholderDetail(null);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  /* =========================================================
+     INITIAL / TAB LOAD
+     ========================================================= */
+
+  useEffect(() => {
+    if (!activeTab) {
+      return;
+    }
+
+    const backendType = uiTypeToBackend[activeTab as Stakeholder["type"]];
+
+    setSearchQuery("");
+    setStatusFilter("All");
+
+    loadStakeholders(backendType);
+  }, [activeTab]);
+
+  /* =========================================================
+     LOAD DETAIL WHEN SELECTION CHANGES
+     ========================================================= */
+
+  useEffect(() => {
+    if (!selectedStkId) {
+      setSelectedStakeholderDetail(null);
+      return;
+    }
+
+    loadStakeholderDetail(selectedStkId);
+  }, [selectedStkId]);
+
+  /* =========================================================
+     FILTER
+     ========================================================= */
+
   const filteredData = stakeholders.filter((item) => {
-    const matchesTab = item.type === activeTab;
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.city.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "All" ? true : item.status === statusFilter;
+    const query = searchQuery.trim().toLowerCase();
 
-    return matchesTab && matchesSearch && matchesStatus;
+    const matchesSearch =
+      !query ||
+      item.name.toLowerCase().includes(query) ||
+      item.email.toLowerCase().includes(query) ||
+      item.phone.toLowerCase().includes(query) ||
+      item.city.toLowerCase().includes(query);
+
+    const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
   });
 
-  // Action Dispatch Event Triggers
+  const activeStk = filteredData.find((item) => item.id === selectedStkId) || null;
+
+  /* =========================================================
+     CREATE
+     ========================================================= */
+
   const handleOpenCreate = () => {
+    const category = (activeTab || "Customer") as Stakeholder["type"];
+
     setIsEditing(false);
-    setFormType(activeTab || "Customer");
+    setTargetStakeholder(null);
+    setFormError("");
+
+    setFormData({
+      ...initialStakeholderFormData,
+      stakeholderCategory: uiTypeToBackend[category],
+    });
+
     openDrawer();
   };
 
-  const handleOpenEdit = (stk: Stakeholder) => {
+  /* =========================================================
+     EDIT
+     ========================================================= */
+
+  const handleOpenEdit = async (stakeholder: Stakeholder) => {
+    setFormError("");
+    setTargetStakeholder(stakeholder);
+
     setIsEditing(true);
-    setTargetStakeholder(stk);
-    setFormType(stk.type);
-    openDrawer();
+    setFormSubmitting(false);
+
+    try {
+      setLoadingDetail(true);
+
+      const detail = await getStakeholderById(Number(stakeholder.id));
+
+      console.log("EMPLOYEE DETAIL FROM BACKEND:", {
+        employeeRole: detail.employeeRole,
+        employeeDept: detail.employeeDept,
+        payrollStructure: detail.payrollStructure,
+        salary: detail.salary,
+      });
+
+      setFormData({
+        stakeholderCategory: detail.stakeholderCategory,
+        firstName: detail.firstName,
+        lastName: detail.lastName,
+        primaryPhoneCode: String(detail.primaryPhoneCode),
+        primaryPhoneNum: String(detail.primaryPhoneNum),
+        secondaryPhoneCode:
+          detail.secondaryPhoneCode != null ? String(detail.secondaryPhoneCode) : "",
+        secondaryPhoneNum:
+          detail.secondaryPhoneNum != null ? String(detail.secondaryPhoneNum) : "",
+        email: detail.email,
+        primaryAddress: detail.primaryAddress || "",
+        secondaryAddress: detail.secondaryAddress || "",
+        city: detail.city,
+        stateOrProvince: detail.stateOrProvince || "",
+        country: detail.country,
+        postalCode: detail.postalCode || "",
+        extraComments: detail.extraComments || "",
+        employeeDetails: {
+          employeeRole: detail.employeeRole || null,
+          employeeDept: detail.employeeDept || null,
+          payrollStructure: detail.payrollStructure || null,
+          salary: detail.salary != null ? Number(detail.salary) : null,
+        },
+      });
+
+      openDrawer();
+    } catch (error: any) {
+      console.error("Failed to load stakeholder for editing:", error);
+
+      const status = error?.response?.status;
+
+      if (status === 404) {
+        setFormError("The stakeholder record was not found.");
+      } else if (status === 401) {
+        setFormError("Your session has expired. Please log in again.");
+      } else if (status === 403) {
+        setFormError("You are not authorized to edit this stakeholder.");
+      } else {
+        setFormError("Unable to load stakeholder details for editing.");
+      }
+    } finally {
+      setLoadingDetail(false);
+    }
   };
 
-  const handleOpenDeactivate = (stk: Stakeholder) => {
-    setTargetStakeholder(stk);
+  /* =========================================================
+     STATUS MODAL
+     ========================================================= */
+
+  const handleOpenStatusChange = (stakeholder: Stakeholder) => {
+    setTargetStakeholder(stakeholder);
+    setStatusError("");
     openDeactivateModal();
   };
 
-  const handleOpenDelete = (stk: Stakeholder) => {
-    setTargetStakeholder(stk);
+  /* =========================================================
+     DELETE MODAL
+     ========================================================= */
+
+  const handleOpenDelete = (stakeholder: Stakeholder) => {
+    setTargetStakeholder(stakeholder);
+    setDeleteError("");
     openDeleteModal();
   };
 
-  const executeDeactivate = () => {
-    if (targetStakeholder) {
-      setStakeholders(prev => prev.map(s => s.id === targetStakeholder.id ? { ...s, status: "Inactive" } : s));
-    }
-    closeDeactivateModal();
+  /* =========================================================
+     CLOSE FORM
+     ========================================================= */
+
+  const handleCloseDrawer = () => {
+    closeDrawer();
+
+    setFormError("");
+    setTargetStakeholder(null);
+    setIsEditing(false);
+    setFormSubmitting(false);
+
+    setFormData({
+      ...initialStakeholderFormData,
+      employeeDetails: {
+        ...initialStakeholderFormData.employeeDetails,
+      },
+    });
   };
 
-  const executeDelete = () => {
-    if (targetStakeholder && targetStakeholder.dependentTransactions === 0) {
-      setStakeholders(prev => prev.filter(s => s.id !== targetStakeholder.id));
+  /* =========================================================
+     CREATE / UPDATE SUBMIT
+     ========================================================= */
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    setFormError("");
+    setFormSubmitting(true);
+
+    try {
+      console.log("FORM EMPLOYEE DETAILS:", formData.employeeDetails);
+
+      const request = buildCreateRequest(formData);
+      console.log("UPDATE REQUEST:", JSON.stringify(request, null, 2));
+
+      /* -----------------------------------------------------
+         UPDATE
+         ----------------------------------------------------- */
+
+      if (isEditing && targetStakeholder) {
+        const response = await updateStakeholder(
+          Number(targetStakeholder.id),
+          request
+        );
+
+        setSelectedStakeholderDetail(response);
+        closeDrawer();
+
+        await loadStakeholders(
+          response.stakeholderCategory,
+          response.stakeholderId
+        );
+        return;
+      }
+
+      /* -----------------------------------------------------
+         CREATE
+         ----------------------------------------------------- */
+
+      const response = await createStakeholder(request);
+
+      handleCloseDrawer();
+
+      await loadStakeholders(
+        response.stakeholderCategory,
+        response.stakeholderId
+      );
+
+    } catch (error: any) {
+      console.error("Stakeholder save failed:", error);
+
+      const status = error?.response?.status;
+      console.log("Backend error response:", error?.response?.data);
+      const message = error?.response?.data?.message;
+
+      if (status === 400) {
+        setFormError(
+          message || "Please correct the stakeholder details and try again."
+        );
+      } else if (status === 401) {
+        setFormError("Your session has expired. Please log in again.");
+      } else if (status === 403) {
+        setFormError(
+          isEditing
+            ? "You are not authorized to update this stakeholder."
+            : "You are not authorized to create a stakeholder."
+        );
+      } else if (status === 404) {
+        setFormError("The stakeholder record was not found.");
+      } else if (status === 409) {
+        setFormError(
+          message || "A stakeholder with the same information already exists."
+        );
+      } else {
+        setFormError(
+          isEditing
+            ? "Unable to update stakeholder. Please try again."
+            : "Unable to create stakeholder. Please try again."
+        );
+      }
+    } finally {
+      setFormSubmitting(false);
     }
-    closeDeleteModal();
+  };
+
+  /* =========================================================
+     ACTIVATE / DEACTIVATE
+     ========================================================= */
+
+  const executeStatusChange = async () => {
+    if (!targetStakeholder) {
+      return;
+    }
+
+    const newStatus = targetStakeholder.status !== "Active";
+
+    setStatusLoading(true);
+    setStatusError("");
+
+    try {
+      const response = await updateStakeholderStatus(
+        Number(targetStakeholder.id),
+        newStatus
+      );
+
+      closeDeactivateModal();
+
+      await loadStakeholders(response.stakeholderCategory, response.stakeholderId);
+      setSelectedStakeholderDetail(response);
+    } catch (error: any) {
+      console.error("Failed to update stakeholder status:", error);
+
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message;
+
+      if (status === 404) {
+        setStatusError("Stakeholder record was not found.");
+      } else if (status === 401) {
+        setStatusError("Your session has expired. Please log in again.");
+      } else if (status === 403) {
+        setStatusError("You are not authorized to change stakeholder status.");
+      } else {
+        setStatusError(message || "Unable to update stakeholder status.");
+      }
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  /* =========================================================
+     DELETE
+     ========================================================= */
+
+  const executeDelete = async () => {
+    if (!targetStakeholder) {
+      return;
+    }
+
+    setDeleteLoading(true);
+    setDeleteError("");
+
+    try {
+      const deletedId = Number(targetStakeholder.id);
+      const deletedType = uiTypeToBackend[targetStakeholder.type];
+
+      await deleteStakeholder(deletedId);
+
+      closeDeleteModal();
+      setSelectedStakeholderDetail(null);
+
+      await loadStakeholders(deletedType);
+    } catch (error: any) {
+      console.error("Failed to delete stakeholder:", error);
+
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message;
+
+      if (status === 404) {
+        setDeleteError("This stakeholder no longer exists.");
+      } else if (status === 401) {
+        setDeleteError("Your session has expired. Please log in again.");
+      } else if (status === 403) {
+        setDeleteError("You are not authorized to delete this stakeholder.");
+      } else if (status === 409) {
+        setDeleteError(
+          message ||
+            "This stakeholder cannot be deleted because it is being used elsewhere."
+        );
+      } else {
+        setDeleteError(message || "Unable to delete stakeholder. Please try again.");
+      }
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
-    <Container fluid p={0} display="flex" style={{ flexDirection: 'column', gap: 'var(--mantine-spacing-md)', width: '100%' }}>
-      {/* CORE TOP MODULE APP BANNER HEADER BAR */}
-      <Paper p="md" radius="md" mb="xl" withBorder>
-        <Group justify="space-between" align="center">
-          <Stack gap={4}>
-            <Title order={2}>Stakeholders Matrix</Title>
-            <Text size="sm" c="dimmed">Centralized coordination environment for corporate customers, raw material Suppliers, trade sub-contractors, and internal employees.</Text>
-          </Stack>
-          <Button
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={handleOpenCreate}
-          >
-            Add Stakeholder
-          </Button>
-        </Group>
-      </Paper>
+  <Container fluid p={0} style={{ width: "100%" }}>
+    {/* =====================================================
+        HEADER
+        ===================================================== */}
 
-      {/* CORE OPERATIONAL TAB SEPARATION LAYER */}
-      <Tabs value={activeTab} onChange={(value) => { setActiveTab(value); setStatusFilter("All"); }} color='brandOrange' variant="pills">
-        <Tabs.List>
-          <Tabs.Tab value="Customer" leftSection={<IconUsers size={14} />}>Customers</Tabs.Tab>
-          <Tabs.Tab value="Supplier" leftSection={<IconBuildingStore size={14} />}>Suppliers</Tabs.Tab>
-          <Tabs.Tab value="Sub-contractor" leftSection={<IconCone2 size={14} />}>Sub-contractors</Tabs.Tab>
-          <Tabs.Tab value="Employee" leftSection={<IconBadge size={14} />}>Employees</Tabs.Tab>
-        </Tabs.List>
+    <Paper p="md" radius="md" mb="md" withBorder>
+      <Group justify="space-between" align="center">
+        <Stack gap={4}>
+          <Title order={2}>Stakeholders</Title>
+          <Text size="sm" c="dimmed">
+            Manage customers, suppliers, sub-contractors, and employees.
+          </Text>
+        </Stack>
 
-        <Grid columns={12} gap="md" mt="md">
-          {/* SEARCH CONTROLS + LEDGER GRID ROSTER CONTROL BOX */}
-          <Grid.Col span={{ base: 12, md: 8 }}>
-            <Card withBorder radius="md" p="sm">
-              <Stack gap="xs">
-                <Group justify="space-between">
-                  <Text size="xs" fw={700} c="dimmed" tt="uppercase">System Ledger Roster</Text>
-                  <Group gap="xs">
-                    <Select
-                      size="xs"
-                      placeholder="Status Filter"
-                      data={["All", "Active", "Inactive"]}
-                      value={statusFilter}
-                      onChange={setStatusFilter}
-                      leftSection={<IconFilter size={12} />}
-                      style={{ width: 130 }}
-                    />
-                  </Group>
-                </Group>
+        <Button
+          size="sm"
+          leftSection={<IconPlus size={16} />}
+          onClick={handleOpenCreate}
+        >
+          Add Stakeholder
+        </Button>
+      </Group>
+    </Paper>
 
-                <TextInput
-                  placeholder="Query stakeholder title, dispatch coordinator, deployment city node..."
+    {/* =====================================================
+        TABS
+        ===================================================== */}
+
+    <Tabs
+      variant="pills"
+      value={activeTab}
+      onChange={(value) => {
+        setActiveTab(value);
+        setStatusFilter("All");
+        setSearchQuery("");
+        setSelectedStakeholderDetail(null);
+      }}
+    >
+      <Tabs.List>
+        <Tabs.Tab value="Customer" leftSection={<IconUsers size={14} />}>
+          Customers
+        </Tabs.Tab>
+        <Tabs.Tab value="Supplier" leftSection={<IconBuildingStore size={14} />}>
+          Suppliers
+        </Tabs.Tab>
+        <Tabs.Tab value="Sub-contractor" leftSection={<IconCone2 size={14} />}>
+          Sub-contractors
+        </Tabs.Tab>
+        <Tabs.Tab value="Employee" leftSection={<IconBadge size={14} />}>
+          Employees
+        </Tabs.Tab>
+      </Tabs.List>
+
+      {/* ===================================================
+          MAIN GRID
+          =================================================== */}
+
+      <Grid columns={12} gap="md" mt="md">
+        {/* =================================================
+            LEFT - LIST
+            ================================================= */}
+
+        <Grid.Col span={{ base: 12, md: 7 }}>
+          <Card withBorder radius="md" p="sm">
+            <Stack gap="sm">
+              <Group justify="space-between">
+                <Text size="sm" fw={700}>
+                  {activeTab}s
+                </Text>
+                <Select
                   size="xs"
-                  leftSection={<IconSearch size={14} />}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.currentTarget.value)}
+                  data={["All", "Active", "Inactive"]}
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  leftSection={<IconFilter size={12} />}
+                  style={{ width: 130 }}
                 />
+              </Group>
 
-                {/* THE SYSTEM LEDGER DATA RENDER PANEL */}
-                <Card withBorder p={0} radius="sm" style={{ overflowX: "auto" }}>
-                  <Table horizontalSpacing="xs" verticalSpacing="xs" highlightOnHover>
-                    <Table.Thead style={{ background: "var(--mantine-color-default-hover)" }}>
+              <TextInput
+                placeholder="Search by name, phone, email or city..."
+                size="xs"
+                leftSection={<IconSearch size={14} />}
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.currentTarget.value)}
+              />
+
+              <Card withBorder p={0} radius="sm" style={{ overflowX: "auto" }}>
+                <Table horizontalSpacing="xs" verticalSpacing="xs" highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Name</Table.Th>
+                      <Table.Th>Phone</Table.Th>
+                      <Table.Th>Email</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                      <Table.Th style={{ width: 50 }} />
+                    </Table.Tr>
+                  </Table.Thead>
+
+                  <Table.Tbody>
+                    {loadingStakeholders ? (
                       <Table.Tr>
-                        <Table.Th style={{ fontSize: '11px' }}>Entity Identity</Table.Th>
-                        <Table.Th style={{ fontSize: '11px' }}>Contact / Role</Table.Th>
-                        <Table.Th style={{ fontSize: '11px' }}>Communications Path</Table.Th>
-                        <Table.Th style={{ fontSize: '11px' }}>Zone / City</Table.Th>
-                        <Table.Th style={{ fontSize: '11px' }}>Category / Dept</Table.Th>
-                        <Table.Th style={{ fontSize: '11px', textAlign: "center" }}>Status</Table.Th>
-                        <Table.Th style={{ fontSize: '11px', width: 50 }}></Table.Th>
+                        <Table.Td colSpan={5}>
+                          <Text size="xs" c="dimmed" ta="center" py="xl">
+                            Loading stakeholder records...
+                          </Text>
+                        </Table.Td>
                       </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {filteredData.length === 0 ? (
-                        <Table.Tr>
-                          <Table.Td colSpan={7} style={{ textAlign: "center", padding: "20px 0" }}>
-                            <Text size="xs" c="dimmed">No tracking profiles located matching parameter constraints.</Text>
+                    ) : stakeholderError ? (
+                      <Table.Tr>
+                        <Table.Td colSpan={5}>
+                          <Alert color="red" icon={<IconAlertCircle size={16} />}>
+                            {stakeholderError}
+                          </Alert>
+                        </Table.Td>
+                      </Table.Tr>
+                    ) : filteredData.length === 0 ? (
+                      <Table.Tr>
+                        <Table.Td colSpan={5}>
+                          <Text size="xs" c="dimmed" ta="center" py="xl">
+                            No {activeTab?.toLowerCase()} records found.
+                          </Text>
+                        </Table.Td>
+                      </Table.Tr>
+                    ) : (
+                      filteredData.map((stk) => (
+                        <Table.Tr
+                          key={stk.id}
+                          style={{
+                            cursor: "pointer",
+                            backgroundColor:
+                              stk.id === selectedStkId
+                                ? "var(--mantine-color-brandOrange-light)"
+                                : undefined,
+                          }}
+                          onClick={() => setSelectedStkId(stk.id)}
+                        >
+                          <Table.Td>
+                            <Group gap="xs" wrap="nowrap">
+                              <Avatar size={30} radius="md" color="brandOrange">
+                                {stk.firstName?.charAt(0)}
+                                {stk.lastName?.charAt(0)}
+                              </Avatar>
+                              <Stack gap={0}>
+                                <Text size="xs" fw={700}>
+                                  {stk.name}
+                                </Text>
+                                <Text size="10px" c="dimmed">
+                                  ID: {stk.id}
+                                </Text>
+                              </Stack>
+                            </Group>
+                          </Table.Td>
+
+                          <Table.Td>
+                            <Text size="xs">
+                              <IconPhone
+                                size={11}
+                                style={{ verticalAlign: "middle", marginRight: 4 }}
+                              />
+                              {stk.phone}
+                            </Text>
+                          </Table.Td>
+
+                          <Table.Td>
+                            <Text
+                              size="xs"
+                              style={{
+                                maxWidth: 180,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <IconMail
+                                size={11}
+                                style={{ verticalAlign: "middle", marginRight: 4 }}
+                              />
+                              {stk.email}
+                            </Text>
+                          </Table.Td>
+
+                          <Table.Td>
+                            <Badge
+                              size="xs"
+                              color={stk.status === "Active" ? "teal" : "red"}
+                              variant="light"
+                            >
+                              {stk.status}
+                            </Badge>
+                          </Table.Td>
+
+                          <Table.Td onClick={(event) => event.stopPropagation()}>
+                            <Menu position="bottom-end" shadow="md" width={170}>
+                              <Menu.Target>
+                                <ActionIcon variant="subtle" color="gray" size="sm">
+                                  <IconDotsVertical size={14} />
+                                </ActionIcon>
+                              </Menu.Target>
+
+                              <Menu.Dropdown>
+                                <Menu.Item
+                                  leftSection={<IconEye size={14} />}
+                                  onClick={() => setSelectedStkId(stk.id)}
+                                >
+                                  View Details
+                                </Menu.Item>
+
+                                <Menu.Item
+                                  leftSection={<IconEdit size={14} />}
+                                  onClick={() => handleOpenEdit(stk)}
+                                >
+                                  Edit
+                                </Menu.Item>
+
+                                <Menu.Item
+                                  leftSection={
+                                    stk.status === "Active" ? (
+                                      <IconBan size={14} />
+                                    ) : (
+                                      <IconCheck size={14} />
+                                    )
+                                  }
+                                  onClick={() => handleOpenStatusChange(stk)}
+                                >
+                                  {stk.status === "Active" ? "Deactivate" : "Activate"}
+                                </Menu.Item>
+
+                                <Menu.Divider />
+
+                                <Menu.Item
+                                  leftSection={<IconTrash size={14} />}
+                                  color="red"
+                                  onClick={() => handleOpenDelete(stk)}
+                                >
+                                  Delete
+                                </Menu.Item>
+                              </Menu.Dropdown>
+                            </Menu>
                           </Table.Td>
                         </Table.Tr>
-                      ) : (
-                        filteredData.map((stk) => (
-                          <Table.Tr 
-                            key={stk.id}
-                            style={{ 
-                              cursor: "pointer",
-                              backgroundColor: stk.id === selectedStkId ? "var(--mantine-color-brandOrange-light)" : "transparent"
-                            }}
-                            onClick={() => setSelectedStkId(stk.id)}
-                          >
-                            <Table.Td>
-                              <Stack gap={0}>
-                                <Text size="xs" fw={700}>{stk.name}</Text>
-                                <Text size="10px" c="dimmed">{stk.id} • Created {stk.createdDate}</Text>
-                              </Stack>
-                            </Table.Td>
-                            <Table.Td>
-                              <Text size="xs" fw={500}>{stk.type === "Employee" ? (stk.role || "-") : stk.contactPerson}</Text>
-                            </Table.Td>
-                            <Table.Td>
-                              <Stack gap={0}>
-                                <Text size="10px" fw={500}><IconPhone size={10} style={{ display: 'inline', marginRight: 4 }} />{stk.phone}</Text>
-                                <Text size="10px" c="dimmed"><IconMail size={10} style={{ display: 'inline', marginRight: 4 }} />{stk.email}</Text>
-                              </Stack>
-                            </Table.Td>
-                            <Table.Td><Text size="xs">{stk.city}</Text></Table.Td>
-                            <Table.Td>
-                              {activeTab === "Customer" && <Badge size="xs" variant="outline" color="blue">{stk.customerCategory}</Badge>}
-                              {activeTab === "Supplier" && <Badge size="xs" variant="outline" color="orange">{stk.SupplierCategory}</Badge>}
-                              {activeTab === "Sub-contractor" && <Badge size="xs" variant="outline" color="teal">{stk.workCategory}</Badge>}
-                              {activeTab === "Employee" && <Badge size="xs" variant="outline" color="violet">{stk.department}</Badge>}
-                            </Table.Td>
-                            <Table.Td style={{ textAlign: "center" }}>
-                              <Badge size="xs" color={stk.status === "Active" ? "teal" : "red"} variant="light">
-                                {stk.status}
-                              </Badge>
-                            </Table.Td>
-                            <Table.Td onClick={(e) => e.stopPropagation()}>
-                              <Menu position="bottom-end" shadow="md" width={160}>
-                                <Menu.Target>
-                                  <ActionIcon variant="subtle" color="gray" size="sm">
-                                    <IconDotsVertical size={14} />
-                                  </ActionIcon>
-                                </Menu.Target>
-                                <Menu.Dropdown>
-                                  <Menu.Item leftSection={<IconEye size={14} />} onClick={() => setSelectedStkId(stk.id)}>Focus Card</Menu.Item>
-                                  <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => handleOpenEdit(stk)}>Edit Node</Menu.Item>
-                                  <Menu.Item leftSection={<IconBan size={14} />} onClick={() => handleOpenDeactivate(stk)}>Deactivate Profile</Menu.Item>
-                                  <Menu.Divider />
-                                  <Menu.Item 
-                                    leftSection={<IconTrash size={14} />} 
-                                    color="red"
-                                    disabled={stk.dependentTransactions > 0}
-                                    onClick={() => handleOpenDelete(stk)}
-                                  >
-                                    Delete Record
-                                  </Menu.Item>
-                                </Menu.Dropdown>
-                              </Menu>
-                            </Table.Td>
-                          </Table.Tr>
-                        ))
-                      )}
-                    </Table.Tbody>
-                  </Table>
-                </Card>
+                      ))
+                    )}
+                  </Table.Tbody>
+                </Table>
+              </Card>
 
-                {/* HIGH MATRIX PAGINATION FOOTER CONTROL SYSTEM */}
-                <Group justify="space-between" mt="xs">
-                  <Text size="11px" c="dimmed">Showing {filteredData.length} entries matching dynamic data state</Text>
-                  <Pagination total={1} size="xs" radius="sm" />
+              <Text size="xs" c="dimmed">
+                Showing {filteredData.length} stakeholder
+                {filteredData.length === 1 ? "" : "s"}
+              </Text>
+            </Stack>
+          </Card>
+        </Grid.Col>
+
+        {/* =================================================
+            RIGHT - DETAIL
+            ================================================= */}
+
+        <Grid.Col span={{ base: 12, md: 5 }}>
+          {loadingDetail ? (
+            <Card withBorder radius="md">
+              <Text size="sm" c="dimmed" ta="center" py="xl">
+                Loading stakeholder details...
+              </Text>
+            </Card>
+          ) : detailError ? (
+            <Alert color="red" icon={<IconAlertCircle size={16} />}>
+              {detailError}
+            </Alert>
+          ) : selectedStakeholderDetail ? (
+            <Card withBorder radius="md" p="md">
+              <Stack gap="md">
+                {/* -----------------------------------------
+                    HEADER
+                    ----------------------------------------- */}
+
+                <Group justify="space-between" align="flex-start">
+                  <Group gap="sm" wrap="nowrap">
+                    <Avatar size={44} radius="md" color="brandOrange">
+                      {selectedStakeholderDetail.firstName?.charAt(0)}
+                      {selectedStakeholderDetail.lastName?.charAt(0)}
+                    </Avatar>
+
+                    <div>
+                      <Text fw={700} size="md">
+                        {selectedStakeholderDetail.firstName}{" "}
+                        {selectedStakeholderDetail.lastName}
+                      </Text>
+
+                      <Text size="xs" c="dimmed">
+                        ID: {selectedStakeholderDetail.stakeholderId}
+                      </Text>
+                    </div>
+                  </Group>
+
+                  <Badge
+                    color={selectedStakeholderDetail.active ? "teal" : "red"}
+                    variant="light"
+                  >
+                    {selectedStakeholderDetail.active ? "Active" : "Inactive"}
+                  </Badge>
+                </Group>
+
+                <Divider />
+
+                {/* -----------------------------------------
+                    BASIC INFORMATION
+                    ----------------------------------------- */}
+
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase">
+                  Basic Information
+                </Text>
+
+                <SimpleGrid cols={2} spacing="sm">
+                  <div>
+                    <Text size="xs" c="dimmed">
+                      Type
+                    </Text>
+                    <Text size="sm">
+                      {backendTypeToUi[selectedStakeholderDetail.stakeholderCategory]}
+                    </Text>
+                  </div>
+
+                  <div>
+                    <Text size="xs" c="dimmed">
+                      Email
+                    </Text>
+                    <Text size="sm" style={{ wordBreak: "break-word" }}>
+                      {selectedStakeholderDetail.email}
+                    </Text>
+                  </div>
+                </SimpleGrid>
+
+                <Divider />
+
+                {/* -----------------------------------------
+                    CONTACT
+                    ----------------------------------------- */}
+
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase">
+                  Contact
+                </Text>
+
+                <Stack gap={4}>
+                  <Text size="sm">
+                    <IconPhone
+                      size={14}
+                      style={{ verticalAlign: "middle", marginRight: 5 }}
+                    />
+                    +{selectedStakeholderDetail.primaryPhoneCode}{" "}
+                    {selectedStakeholderDetail.primaryPhoneNum}
+                  </Text>
+
+                  {selectedStakeholderDetail.secondaryPhoneNum != null && (
+                    <Text size="sm">
+                      <IconPhone
+                        size={14}
+                        style={{ verticalAlign: "middle", marginRight: 5 }}
+                      />
+                      +{selectedStakeholderDetail.secondaryPhoneCode}{" "}
+                      {selectedStakeholderDetail.secondaryPhoneNum}
+                    </Text>
+                  )}
+                </Stack>
+
+                <Divider />
+
+                {/* -----------------------------------------
+                    ADDRESS
+                    ----------------------------------------- */}
+
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase">
+                  Address
+                </Text>
+
+                <Group gap="xs" wrap="nowrap" align="flex-start">
+                  <ThemeIcon size="sm" variant="light" color="gray">
+                    <IconMapPin size={14} />
+                  </ThemeIcon>
+
+                  <Stack gap={2}>
+                    <Text size="sm">
+                      {selectedStakeholderDetail.primaryAddress}
+                    </Text>
+
+                    {selectedStakeholderDetail.secondaryAddress && (
+                      <Text size="sm" c="dimmed">
+                        {selectedStakeholderDetail.secondaryAddress}
+                      </Text>
+                    )}
+
+                    <Text size="sm" c="dimmed">
+                      {selectedStakeholderDetail.city}
+                      {selectedStakeholderDetail.stateOrProvince
+                        ? `, ${selectedStakeholderDetail.stateOrProvince}`
+                        : ""}
+                      {selectedStakeholderDetail.country
+                        ? `, ${selectedStakeholderDetail.country}`
+                        : ""}
+                      {selectedStakeholderDetail.postalCode
+                        ? ` - ${selectedStakeholderDetail.postalCode}`
+                        : ""}
+                    </Text>
+                  </Stack>
+                </Group>
+
+                {/* -----------------------------------------
+                    EMPLOYEE
+                    ----------------------------------------- */}
+
+                {selectedStakeholderDetail.stakeholderCategory === "EMPLOYEE" && (
+                  <>
+                    <Divider />
+
+                    <Text size="xs" fw={700} c="dimmed" tt="uppercase">
+                      Employee Information
+                    </Text>
+
+                    <SimpleGrid cols={2} spacing="sm">
+                      <div>
+                        <Text size="xs" c="dimmed">
+                          Designation
+                        </Text>
+                        <Text size="sm">
+                          {selectedStakeholderDetail.employeeRole
+                            ? designationLabels[selectedStakeholderDetail.employeeRole]
+                            : "-"}
+                        </Text>
+                      </div>
+
+                      <div>
+                        <Text size="xs" c="dimmed">
+                          Department
+                        </Text>
+                        <Text size="sm">
+                          {selectedStakeholderDetail.employeeDept
+                            ? departmentLabels[selectedStakeholderDetail.employeeDept]
+                            : "-"}
+                        </Text>
+                      </div>
+
+                      <div>
+                        <Text size="xs" c="dimmed">
+                          Payroll
+                        </Text>
+                        <Text size="sm">
+                          {selectedStakeholderDetail.payrollStructure
+                            ? payrollLabels[selectedStakeholderDetail.payrollStructure]
+                            : "-"}
+                        </Text>
+                      </div>
+
+                      <div>
+                        <Text size="xs" c="dimmed">
+                          Salary
+                        </Text>
+                        <Text size="sm">
+                          {selectedStakeholderDetail.salary != null
+                            ? selectedStakeholderDetail.salary.toLocaleString("en-IN")
+                            : "-"}
+                        </Text>
+                      </div>
+                    </SimpleGrid>
+                  </>
+                )}
+
+                {/* -----------------------------------------
+                    ADDITIONAL INFORMATION & ACTIONS
+                    ----------------------------------------- */}
+
+                {selectedStakeholderDetail.extraComments && (
+                  <>
+                    <Divider />
+
+                    <Group gap="xs">
+                      <IconNotes size={14} />
+                      <Text size="xs" fw={700} c="dimmed" tt="uppercase">
+                        Additional Information
+                      </Text>
+                    </Group>
+
+                    <Text size="sm" c="dimmed">
+                      {selectedStakeholderDetail.extraComments}
+                    </Text>
+                  </>
+                )}
+
+                {/* -----------------------------------------
+                    ACTIONS
+                    ----------------------------------------- */}
+
+                <Divider />
+
+                <Group justify="flex-end">
+                  {activeStk && (
+                    <>
+                      <Button
+                        size="xs"
+                        variant="light"
+                        leftSection={<IconEdit size={14} />}
+                        onClick={() => handleOpenEdit(activeStk)}
+                      >
+                        Edit
+                      </Button>
+
+                      <Button
+                        size="xs"
+                        variant="light"
+                        color={selectedStakeholderDetail.active ? "orange" : "teal"}
+                        leftSection={
+                          selectedStakeholderDetail.active ? (
+                            <IconBan size={14} />
+                          ) : (
+                            <IconCheck size={14} />
+                          )
+                        }
+                        onClick={() => handleOpenStatusChange(activeStk)}
+                      >
+                        {selectedStakeholderDetail.active ? "Deactivate" : "Activate"}
+                      </Button>
+
+                      <Button
+                        size="xs"
+                        variant="light"
+                        color="red"
+                        leftSection={<IconTrash size={14} />}
+                        onClick={() => handleOpenDelete(activeStk)}
+                      >
+                        Delete
+                      </Button>
+                    </>
+                  )}
                 </Group>
               </Stack>
             </Card>
-          </Grid.Col>
-
-          {/* RIGHT COLUMN: REVENUE IMPACT CARD + PROFILE META EVALUATOR */}
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <Stack gap="md">
-              {activeStk ? (
-                <>
-                  <Card withBorder radius="md" p="sm" bg="var(--mantine-color-brandOrange-light)" style={{ borderLeft: "4px solid var(--mantine-color-brandOrange-filled)" }}>
-                    <Stack gap={4}>
-                      <Group justify="space-between">
-                        <Text size="10px" fw={700} c="brandOrange" tt="uppercase">Transaction Ledger Lock</Text>
-                        <Badge size="xs" color="brandOrange">{activeStk.type}</Badge>
-                      </Group>
-                      <Text size="sm" fw={700} c="brandOrange">{activeStk.name}</Text>
-                      <Group gap="xs" mt={4}>
-                        <ThemeIcon size="xs" color="brandOrange" variant="light"><IconCurrencyDollar size={10} /></ThemeIcon>
-                        <Text size="xs" fw={500} c="brandOrange">
-                          {activeStk.type === "Customer" && `Credit Limit Bound: $${activeStk.creditLimit?.toLocaleString('en-IN')}`}
-                          {activeStk.type === "Supplier" && `Material Sourcing: ${activeStk.materialServiceType}`}
-                          {activeStk.type === "Sub-contractor" && `Specialization Node: ${activeStk.specialization}`}
-                          {activeStk.type === "Employee" && `Designation: ${activeStk.role} (${activeStk.department})`}
-                        </Text>
-                      </Group>
-                    </Stack>
-                  </Card>
-
-                  <Card withBorder radius="md" p="sm">
-                    <Stack gap="sm">
-                      <Group gap="xs">
-                        <Avatar color="brandOrange" radius="md">
-                          {activeStk.name.split(" ").map(n => n[0]).join("")}
-                        </Avatar>
-                        <div>
-                          <Text size="xs" fw={700}>{activeStk.type === "Employee" ? activeStk.name : activeStk.contactPerson}</Text>
-                          <Text size="10px" c="dimmed">{activeStk.type === "Employee" ? activeStk.role : "Assigned Point of Contact"}</Text>
-                        </div>
-                      </Group>
-
-                      <Divider style={{ borderTopStyle: "dashed" }} />
-
-                      <Stack gap={6}>
-                        <Text size="10px" fw={700} c="dimmed" tt="uppercase">Fulfillment Logistics Address</Text>
-                        <Group gap={4} wrap="nowrap" align="flex-start">
-                          <IconMapPin size={12} style={{ color: 'var(--mantine-color-dimmed)', marginTop: 2, flexShrink: 0 }} />
-                          <Text size="xs" c="dimmed">
-                            {activeStk.addressLine1}, {activeStk.addressLine2 ? `${activeStk.addressLine2}, ` : ""}{activeStk.city}, {activeStk.state}, {activeStk.country}, {activeStk.postalCode}
-                          </Text>
-                        </Group>
-                      </Stack>
-
-                      <Divider style={{ borderTopStyle: "dashed" }} />
-
-                      <Stack gap={6}>
-                        <Text size="10px" fw={700} c="dimmed" tt="uppercase">Commercial Contracts Configuration</Text>
-                        <SimpleGrid cols={2} spacing="xs">
-                          <div>
-                            <Text size="10px" c="dimmed">PAYMENT TERM CLAUSE</Text>
-                            <Text size="xs" fw={600}>{activeStk.paymentTerms}</Text>
-                          </div>
-                          <div>
-                            <Text size="10px" c="dimmed">DEPENDENT LEDGER LINKAGE</Text>
-                            <Badge size="xs" color={activeStk.dependentTransactions > 0 ? "blue" : "gray"} variant="light">
-                              {activeStk.dependentTransactions} Transactions
-                            </Badge>
-                          </div>
-                        </SimpleGrid>
-                      </Stack>
-
-                      {activeStk.notes && (
-                        <>
-                          <Divider style={{ borderTopStyle: "dashed" }} />
-                          <Stack gap={4}>
-                            <Group gap={4}><IconNotes size={12} color="var(--mantine-color-dimmed)" /><Text size="10px" fw={700} c="dimmed" tt="uppercase">System Remarks / Notes</Text></Group>
-                            <Text size="xs" c="dimmed" style={{ fontStyle: "italic" }}>"{activeStk.notes}"</Text>
-                          </Stack>
-                        </>
-                      )}
-                    </Stack>
-                  </Card>
-                </>
-              ) : (
-                <Alert title="System Insight Grid">
-                  Select a specific stakeholder record line inside the central registry matrix tool to display live configuration schemas here.
-                </Alert>
-              )}
-            </Stack>
-          </Grid.Col>
-        </Grid>
-      </Tabs>
-
-      {/* COMPREHENSIVE ADD / EDIT STAKEHOLDER SLIDE-OUT DRAWER */}
-      <Modal
-        opened={drawerOpened}
-        onClose={closeDrawer}
-        title={
-          <Text size="md" fw={700}>
-            {isEditing ? `Edit Stakeholder Detail: ${targetStakeholder?.id}` : "Create New Stakeholder"}
-          </Text>
-        }
-        size="70%"
-        centered
-      >
-        <Stack gap="md" component="form" onSubmit={(e) => { e.preventDefault(); closeDrawer(); }}>
-          
-          <Select
-            label="New Stakeholder Type"
-            data={["Customer", "Supplier", "Sub-contractor", "Employee"]}
-            value={formType}
-            onChange={(val) => val && setFormType(val)}
-            disabled={isEditing}
-            required
-          />
-
-          {/* Dynamic Sub-Form Injection - Works exactly as before */}
-          {formType === "Customer" && <CustomerForm isEditing={isEditing} />}
-          {formType === "Supplier" && <SupplierForm isEditing={isEditing} />}
-          {formType === "Sub-contractor" && <SubContractorForm isEditing={isEditing} />}
-          {formType === "Employee" && <EmployeeForm isEditing={isEditing} />}
-
-          <Divider /> 
-          <DocumentUpload /> 
-          <Divider />
-
-          <Textarea label="Additional Information" placeholder="Add additional information about the stakeholder here." rows={3} />
-
-          <Group justify="flex-end" mt="md">
-            <Button variant="outline" onClick={closeDrawer}>Cancel</Button>
-            <Button type="submit">Add</Button>
-          </Group>
-        </Stack>
-      </Modal>
-
-      {/* OPERATIONAL SAFE DISPATCH DEACTIVATION WARNING MODAL */}
-      <Modal
-        opened={deactivateModalOpened}
-        onClose={closeDeactivateModal}
-        title={<Text size="xs" fw={700} c="orange.7" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IconAlertCircle size={14} /> Profile Isolation Warning</Text>}
-        centered
-        size="sm"
-      >
-        <Stack gap="sm">
-          <Text size="xs">
-            Are you sure you want to isolate stakeholder profile <b>{targetStakeholder?.name}</b>?
-          </Text>
-          <Text size="11px" c="dimmed">
-            This prevents this resource ledger identifier from being mapped into future procurement purchase logs or active billing cycles until it is manually reactivated.
-          </Text>
-          <Group justify="flex-end" gap="xs" mt="xs">
-            <Button size="xs" variant="outline" color="gray" onClick={closeDeactivateModal}>Cancel</Button>
-            <Button size="xs" color="orange" onClick={executeDeactivate}>Isolate Profile</Button>
-          </Group>
-        </Stack>
-      </Modal>
-
-      {/* HARD DELETION AUDIT VALIDATION MODAL */}
-      <Modal
-        opened={deleteModalOpened}
-        onClose={closeDeleteModal}
-        title={<Text size="xs" fw={700} c="red.7" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IconAlertCircle size={14} /> Destructive Mutation Alert</Text>}
-        centered
-        size="sm"
-      >
-        <Stack gap="sm">
-          <Text size="xs">
-            Confirm permanent purging of stakeholder structural record: <b>{targetStakeholder?.name}</b>?
-          </Text>
-          {targetStakeholder && targetStakeholder.dependentTransactions > 0 ? (
-            <Alert color="red" icon={<IconAlertCircle size={14} />} styles={{ title: { fontSize: '11px' }, message: { fontSize: '10px' } }}>
-              Purge Rejected: This ledger reference contains {targetStakeholder.dependentTransactions} active downstream tracking connections in the Sales/Purchase logs. You must dissolve those relationships first.
-            </Alert>
           ) : (
-            <Text size="11px" c="dimmed">
-              Warning: This action is absolute and deletes the indexing key entirely from your relational runtime environment.
-            </Text>
+            <Alert title="No Stakeholder Selected" icon={<IconEye size={16} />}>
+              Select a stakeholder from the list to view the complete details.
+            </Alert>
           )}
-          <Group justify="flex-end" gap="xs" mt="xs">
-            <Button size="xs" variant="outline" color="gray" onClick={closeDeleteModal}>Abort</Button>
-            <Button 
-              size="xs" 
-              color="red" 
-              onClick={executeDelete}
-              disabled={targetStakeholder ? targetStakeholder.dependentTransactions > 0 : false}
-            >
-              Purge Permanently
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
-    </Container>
-  );
+        </Grid.Col>
+      </Grid>
+    </Tabs>
+
+    {/* =====================================================
+        CREATE / EDIT MODAL
+        ===================================================== */}
+
+    <Modal
+      opened={drawerOpened}
+      onClose={formSubmitting ? () => {} : handleCloseDrawer}
+      title={
+        <Text size="md" fw={700}>
+          {isEditing
+            ? `Edit Stakeholder: ${targetStakeholder?.id}`
+            : "Create New Stakeholder"}
+        </Text>
+      }
+      size="70%"
+      centered
+    >
+      <Stack gap="md" component="form" onSubmit={handleSubmit}>
+        {formError && (
+          <Alert color="red" icon={<IconAlertCircle size={16} />}>
+            {formError}
+          </Alert>
+        )}
+
+        <StakeholderForm
+          value={formData}
+          onChange={setFormData}
+          isEditing={isEditing}
+        />
+
+        <Divider />
+
+        <DocumentUpload />
+
+        <Divider />
+
+        <Group justify="flex-end" mt="md">
+          <Button
+            variant="outline"
+            onClick={handleCloseDrawer}
+            disabled={formSubmitting}
+          >
+            Cancel
+          </Button>
+
+          <Button type="submit" loading={formSubmitting}>
+            {isEditing ? "Save Changes" : "Add Stakeholder"}
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+
+    {/* =====================================================
+        ACTIVATE / DEACTIVATE MODAL
+        ===================================================== */}
+
+    <Modal
+      opened={deactivateModalOpened}
+      onClose={statusLoading ? () => {} : closeDeactivateModal}
+      title={
+        <Text
+          size="sm"
+          fw={700}
+          c={targetStakeholder?.status === "Active" ? "orange" : "teal"}
+        >
+          {targetStakeholder?.status === "Active"
+            ? "Deactivate Stakeholder"
+            : "Activate Stakeholder"}
+        </Text>
+      }
+      centered
+      size="sm"
+    >
+      <Stack gap="sm">
+        <Text size="sm">
+          Are you sure you want to{" "}
+          <b>
+            {targetStakeholder?.status === "Active" ? "deactivate" : "activate"}
+          </b>{" "}
+          <b>{targetStakeholder?.name}</b>?
+        </Text>
+
+        <Text size="xs" c="dimmed">
+          {targetStakeholder?.status === "Active"
+            ? "The stakeholder will remain in the system but will be marked inactive."
+            : "The stakeholder will become active and available for normal use."}
+        </Text>
+
+        {statusError && (
+          <Alert color="red" icon={<IconAlertCircle size={14} />}>
+            {statusError}
+          </Alert>
+        )}
+
+        <Group justify="flex-end">
+          <Button
+            size="xs"
+            variant="outline"
+            color="gray"
+            onClick={closeDeactivateModal}
+            disabled={statusLoading}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            size="xs"
+            color={targetStakeholder?.status === "Active" ? "orange" : "teal"}
+            loading={statusLoading}
+            onClick={executeStatusChange}
+          >
+            {targetStakeholder?.status === "Active" ? "Deactivate" : "Activate"}
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+
+    {/* =====================================================
+        DELETE MODAL
+        ===================================================== */}
+
+    <Modal
+      opened={deleteModalOpened}
+      onClose={deleteLoading ? () => {} : closeDeleteModal}
+      title={
+        <Text size="sm" fw={700} c="red">
+          Delete Stakeholder
+        </Text>
+      }
+      centered
+      size="sm"
+    >
+      <Stack gap="sm">
+        <Text size="sm">
+          Are you sure you want to permanently delete{" "}
+          <b>{targetStakeholder?.name}</b>?
+        </Text>
+
+        <Alert color="red" icon={<IconAlertCircle size={14} />}>
+          This action cannot be undone.
+        </Alert>
+
+        {deleteError && (
+          <Alert color="red" icon={<IconAlertCircle size={14} />}>
+            {deleteError}
+          </Alert>
+        )}
+
+        <Group justify="flex-end">
+          <Button
+            size="xs"
+            variant="outline"
+            color="gray"
+            onClick={closeDeleteModal}
+            disabled={deleteLoading}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            size="xs"
+            color="red"
+            loading={deleteLoading}
+            onClick={executeDelete}
+          >
+            Delete
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+  </Container>
+);
 }
