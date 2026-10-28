@@ -1,7 +1,7 @@
 package com.pmsservice.service;
 
-import com.pmsservice.dto.CreateStakeholderRequest;
-import com.pmsservice.dto.UpdateStakeholderRequest;
+import com.pmsservice.dto.stakeholders.CreateStakeholderRequest;
+import com.pmsservice.dto.stakeholders.UpdateStakeholderRequest;
 
 import org.springframework.stereotype.Component;
 

@@ -8,20 +8,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 
-import com.pmsservice.dto.StakeholderListResponse;
 import com.pmsservice.entity.StakeholderInfo;
-import com.pmsservice.dto.CreateStakeholderRequest;
-import com.pmsservice.dto.CreateStakeholderResponse;
 import com.pmsservice.repository.StakeholderRepository;
 import com.pmsservice.validation.StakeholderValidator;
 import com.pmsservice.repository.EmployeeRepository;
 import com.pmsservice.repository.UserAccountRepository;
 import com.pmsservice.enums.StakeholderType;
 import com.pmsservice.entity.EmployeeInfo;
-import com.pmsservice.dto.EmployeeDetailRequest;
-import com.pmsservice.dto.StakeholderDetailResponse;
 import com.pmsservice.errorhandle.StakeholderNotFoundException;
-import com.pmsservice.dto.UpdateStakeholderRequest;
+import com.pmsservice.dto.stakeholders.CreateStakeholderRequest;
+import com.pmsservice.dto.stakeholders.CreateStakeholderResponse;
+import com.pmsservice.dto.stakeholders.EmployeeDetailRequest;
+import com.pmsservice.dto.stakeholders.StakeholderDetailResponse;
+import com.pmsservice.dto.stakeholders.StakeholderListResponse;
+import com.pmsservice.dto.stakeholders.UpdateStakeholderRequest;
 
 @Service
 public class StakeholderService {

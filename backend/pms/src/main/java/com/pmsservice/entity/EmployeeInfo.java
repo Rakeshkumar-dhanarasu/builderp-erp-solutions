@@ -55,7 +55,7 @@ public class EmployeeInfo {
         name = "salary",
         nullable = false,
         precision = 15,
-        scale = 2
+        scale = 3
     )
     private BigDecimal salary;
 

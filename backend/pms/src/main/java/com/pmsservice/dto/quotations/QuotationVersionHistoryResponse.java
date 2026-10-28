@@ -1,9 +1,7 @@
-package com.pmsservice.dto;
+package com.pmsservice.dto.quotations;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
-import com.pmsservice.enums.QuotationStatus;
 
 public class QuotationVersionHistoryResponse {
 
@@ -13,7 +11,7 @@ public class QuotationVersionHistoryResponse {
 
     private LocalDate expiredAt;
 
-    private QuotationStatus quoteStatus;
+    private String quoteStatus;
 
     private BigDecimal marketPrice;
 
@@ -53,11 +51,11 @@ public class QuotationVersionHistoryResponse {
         this.expiredAt = expiredAt;
     }
 
-    public QuotationStatus getQuoteStatus() {
+    public String getQuoteStatus() {
         return quoteStatus;
     }
 
-    public void setQuoteStatus(QuotationStatus quoteStatus) {
+    public void setQuoteStatus(String quoteStatus) {
         this.quoteStatus = quoteStatus;
     }
 

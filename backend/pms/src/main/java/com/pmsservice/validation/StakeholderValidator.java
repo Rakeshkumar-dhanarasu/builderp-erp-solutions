@@ -1,8 +1,8 @@
 package com.pmsservice.validation;
 
-import com.pmsservice.dto.CreateStakeholderRequest;
-import com.pmsservice.dto.EmployeeDetailRequest;
-import com.pmsservice.dto.UpdateStakeholderRequest;
+import com.pmsservice.dto.stakeholders.CreateStakeholderRequest;
+import com.pmsservice.dto.stakeholders.EmployeeDetailRequest;
+import com.pmsservice.dto.stakeholders.UpdateStakeholderRequest;
 import com.pmsservice.enums.StakeholderType;
 
 import org.springframework.stereotype.Component;

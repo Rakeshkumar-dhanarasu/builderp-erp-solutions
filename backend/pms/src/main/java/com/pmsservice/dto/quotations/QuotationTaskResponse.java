@@ -1,11 +1,13 @@
-package com.pmsservice.dto;
+package com.pmsservice.dto.quotations;
 
 import java.math.BigDecimal;
 
 public class QuotationTaskResponse {
 
     private Integer utid;
+    private Short taskId;
     private String taskName;
+    private Short subTaskId;
     private String subTaskName;
     private Integer quantity;
     private String unit;
@@ -19,6 +21,14 @@ public class QuotationTaskResponse {
     public void setUtid(Integer utid) {
         this.utid = utid;
     }
+    
+    public Short getTaskId() {
+    	return taskId;
+    }
+    
+    public void setTaskId(Short taskId) {
+    	this.taskId = taskId;
+    }
 
     public String getTaskName() {
         return taskName;
@@ -26,6 +36,14 @@ public class QuotationTaskResponse {
 
     public void setTaskName(String taskName) {
         this.taskName = taskName;
+    }
+    
+    public Short getSubTaskId() {
+    	return subTaskId;
+    }
+    
+    public void setSubTaskId(Short subTaskId) {
+    	this.subTaskId = subTaskId;
     }
 
     public String getSubTaskName() {

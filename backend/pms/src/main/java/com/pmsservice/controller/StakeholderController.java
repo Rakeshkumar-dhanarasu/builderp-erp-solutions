@@ -17,14 +17,14 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
-import com.pmsservice.dto.StakeholderListResponse;
 import com.pmsservice.enums.StakeholderType;
-import com.pmsservice.dto.CreateStakeholderRequest;
-import com.pmsservice.dto.CreateStakeholderResponse;
 import com.pmsservice.service.StakeholderService;
-import com.pmsservice.dto.StakeholderDetailResponse;
-import com.pmsservice.dto.UpdateStakeholderRequest;
-import com.pmsservice.dto.UpdateStakeholderStatusRequest;
+import com.pmsservice.dto.stakeholders.CreateStakeholderRequest;
+import com.pmsservice.dto.stakeholders.CreateStakeholderResponse;
+import com.pmsservice.dto.stakeholders.StakeholderDetailResponse;
+import com.pmsservice.dto.stakeholders.StakeholderListResponse;
+import com.pmsservice.dto.stakeholders.UpdateStakeholderRequest;
+import com.pmsservice.dto.stakeholders.UpdateStakeholderStatusRequest;
 
 @RestController
 @RequestMapping("/api/pms/stakeholders")

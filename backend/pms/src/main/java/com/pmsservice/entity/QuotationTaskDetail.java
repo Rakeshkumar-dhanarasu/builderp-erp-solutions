@@ -29,9 +29,15 @@ public class QuotationTaskDetail {
 
     @Column(name = "version_number", nullable = false)
     private Short versionNumber;
+    
+    @Column(name = "task_id", nullable = false)
+    private Short taskId;
 
     @Column(name = "task_name", nullable = false)
     private String taskName;
+    
+    @Column(name = "sub_task_id", nullable = false)
+    private Short subTaskId;
 
     @Column(name = "sub_task_name", nullable = false)
     private String subTaskName;
@@ -71,6 +77,14 @@ public class QuotationTaskDetail {
     public void setVersionNumber(Short versionNumber) {
         this.versionNumber = versionNumber;
     }
+    
+    public Short getTaskId() {
+    	return taskId;
+    }
+    
+    public void setTaskId(Short taskId) {
+    	this.taskId = taskId;
+    }
 
     public String getTaskName() {
         return taskName;
@@ -78,6 +92,14 @@ public class QuotationTaskDetail {
 
     public void setTaskName(String taskName) {
         this.taskName = taskName;
+    }
+    
+    public Short getSubTaskId() {
+    	return subTaskId;
+    }
+    
+    public void setSubTaskId(Short subTaskId) {
+    	this.subTaskId = subTaskId;
     }
 
     public String getSubTaskName() {

@@ -2,17 +2,10 @@ package com.pmsservice.entity;
 
 import java.time.LocalDate;
 
-import com.pmsservice.enums.QuotationStatus;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "quotation_detail", schema = "public")
@@ -46,14 +39,8 @@ public class QuotationDetail {
     @Column(name = "current_version", nullable = false)
     private Short currentVersion;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(
-        name = "quota_status",
-        nullable = false,
-        columnDefinition = "status"
-    )
-    private QuotationStatus quotaStatus;
+    @Column(name = "quote_status", nullable = false)
+    private Short quoteStatus;
 
     public String getQuotationId() {
         return quotationId;
@@ -127,11 +114,11 @@ public class QuotationDetail {
         this.currentVersion = currentVersion;
     }
 
-    public QuotationStatus getQuotaStatus() {
-        return quotaStatus;
+    public Short getQuoteStatus() {
+        return quoteStatus;
     }
 
-    public void setQuotaStatus(QuotationStatus quotaStatus) {
-        this.quotaStatus = quotaStatus;
+    public void setQuoteStatus(Short quoteStatus) {
+        this.quoteStatus = quoteStatus;
     }
 }

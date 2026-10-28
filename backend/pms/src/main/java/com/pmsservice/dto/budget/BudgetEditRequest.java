@@ -1,4 +1,4 @@
-package com.pmsservice.dto;
+package com.pmsservice.dto.budget;
 
 import java.math.BigDecimal;
 

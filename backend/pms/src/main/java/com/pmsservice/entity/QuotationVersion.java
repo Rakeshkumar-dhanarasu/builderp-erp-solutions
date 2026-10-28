@@ -3,18 +3,11 @@ package com.pmsservice.entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.pmsservice.enums.QuotationStatus;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
-
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "quotation_versions", schema = "public")
@@ -38,28 +31,22 @@ public class QuotationVersion {
     @Column(name = "expired_at", nullable = false)
     private LocalDate expiredAt;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(
-        name = "quote_status",
-        nullable = false,
-        columnDefinition = "status"
-    )
-    private QuotationStatus quoteStatus;
+    @Column(name = "quote_status", nullable = false)
+    private Short quoteStatus;
 
     @Column(name = "add_comments")
     private String addComments;
 
-    @Column(name = "market_price", nullable = false, precision = 12, scale = 2)
+    @Column(name = "market_price", nullable = false, precision = 12, scale = 3)
     private BigDecimal marketPrice;
 
     @Column(name = "tax_percent")
     private Short taxPercent;
 
-    @Column(name = "discount_amount", precision = 7, scale = 2)
+    @Column(name = "discount_amount", precision = 7, scale = 3)
     private BigDecimal discountAmount;
 
-    @Column(name = "total", nullable = false, precision = 13, scale = 2)
+    @Column(name = "total", nullable = false, precision = 13, scale = 3)
     private BigDecimal total;
     
     @Column(name = "currency_code", nullable = false, length = 3)
@@ -105,11 +92,11 @@ public class QuotationVersion {
         this.expiredAt = expiredAt;
     }
 
-    public QuotationStatus getQuoteStatus() {
+    public Short getQuoteStatus() {
         return quoteStatus;
     }
 
-    public void setQuoteStatus(QuotationStatus quoteStatus) {
+    public void setQuoteStatus(Short quoteStatus) {
         this.quoteStatus = quoteStatus;
     }
 

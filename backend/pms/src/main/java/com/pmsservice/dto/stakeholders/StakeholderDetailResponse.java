@@ -1,4 +1,4 @@
-package com.pmsservice.dto;
+package com.pmsservice.dto.stakeholders;
 
 import java.math.BigDecimal;
 import java.time.Instant;

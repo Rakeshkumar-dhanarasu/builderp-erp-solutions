@@ -1,7 +1,6 @@
 package com.pmsservice.controller;
 
-import com.pmsservice.dto.BudgetEditRequest;
-import com.pmsservice.dto.BudgetResponse;
+import com.pmsservice.dto.budget.*;
 import com.pmsservice.service.BudgetService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.ResponseEntity;
@@ -36,4 +35,16 @@ public class BudgetController {
 
         return ResponseEntity.ok(response);
     }
+    
+
+	@GetMapping("/{quotationId}/tracking")
+	public ResponseEntity<BudgetTrackingResponse> getBudgetTracking(
+	        @PathVariable String quotationId) {
+	
+	    BudgetTrackingResponse response =
+	            budgetService.getBudgetTracking(quotationId);
+	
+	    return ResponseEntity.ok(response);
+	}
+
 }

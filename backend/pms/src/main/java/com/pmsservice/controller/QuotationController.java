@@ -9,12 +9,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import com.pmsservice.dto.CreateQuotationRequest;
-import com.pmsservice.dto.QuotationResponse;
-import com.pmsservice.dto.UpdateQuotationRequest;
+import com.pmsservice.dto.quotations.CreateQuotationRequest;
+import com.pmsservice.dto.quotations.QuotationListResponse;
+import com.pmsservice.dto.quotations.QuotationResponse;
+import com.pmsservice.dto.quotations.QuotationVersionHistoryResponse;
+import com.pmsservice.dto.quotations.UpdateQuotationRequest;
 import com.pmsservice.service.QuotationService;
-import com.pmsservice.dto.QuotationVersionHistoryResponse;
-import com.pmsservice.dto.QuotationListResponse;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;

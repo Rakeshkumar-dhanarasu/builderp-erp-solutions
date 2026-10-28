@@ -21,27 +21,29 @@ import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import com.pmsservice.dto.QuotationVersionHistoryResponse;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
-import com.pmsservice.dto.CreateQuotationRequest;
-import com.pmsservice.dto.QuotationResponse;
-import com.pmsservice.dto.QuotationTaskRequest;
-import com.pmsservice.dto.QuotationTaskResponse;
-import com.pmsservice.dto.UpdateQuotationRequest;
+import com.pmsservice.dto.quotations.CreateQuotationRequest;
+import com.pmsservice.dto.quotations.QuotationListResponse;
+import com.pmsservice.dto.quotations.QuotationResponse;
+import com.pmsservice.dto.quotations.QuotationTaskRequest;
+import com.pmsservice.dto.quotations.QuotationTaskResponse;
+import com.pmsservice.dto.quotations.QuotationVersionHistoryResponse;
+import com.pmsservice.dto.quotations.UpdateQuotationRequest;
 import com.pmsservice.entity.QuotationDetail;
 import com.pmsservice.entity.QuotationTaskDetail;
 import com.pmsservice.entity.QuotationVersion;
 import com.pmsservice.entity.StakeholderInfo;
 import com.pmsservice.entity.BudgetInfo;
-import com.pmsservice.enums.QuotationStatus;
+import com.pmsservice.entity.BudgetCategoryBalance;
+import com.pmsservice.entity.BudgetCategoryBalanceId;
 import com.pmsservice.enums.StakeholderType;
+import com.pmsservice.repository.BudgetCategoryBalanceRepository;
 import com.pmsservice.repository.QuotationDetailRepository;
 import com.pmsservice.repository.QuotationTaskDetailRepository;
 import com.pmsservice.repository.QuotationVersionRepository;
 import com.pmsservice.repository.StakeholderRepository;
 import com.pmsservice.repository.UserAccountRepository;
 import com.pmsservice.repository.BudgetRepository;
-import com.pmsservice.dto.QuotationListResponse;
 import com.pmsservice.util.DateUtils;
 
 @Service
@@ -53,20 +55,24 @@ public class QuotationService {
 	private final StakeholderRepository stakeholderRepository;
 	private final UserAccountRepository userAccountRepository;
 	private final BudgetRepository budgetRepository;
+	private final BudgetCategoryBalanceRepository budgetCategoryBalanceRepository;
 	private final TemplateEngine templateEngine;
 
-	public QuotationService(QuotationDetailRepository quotationDetailRepository,
-			QuotationVersionRepository quotationVersionRepository, BudgetRepository budgetRepository,
-			QuotationTaskDetailRepository quotationTaskDetailRepository, StakeholderRepository stakeholderRepository,
-			UserAccountRepository userAccountRepository, TemplateEngine templateEngine) {
-
-		this.quotationDetailRepository = quotationDetailRepository;
-		this.quotationVersionRepository = quotationVersionRepository;
-		this.budgetRepository = budgetRepository;
-		this.quotationTaskDetailRepository = quotationTaskDetailRepository;
-		this.stakeholderRepository = stakeholderRepository;
-		this.userAccountRepository = userAccountRepository;
-		this.templateEngine = templateEngine;
+	public QuotationService(
+	        QuotationDetailRepository quotationDetailRepository, QuotationVersionRepository quotationVersionRepository,
+	        BudgetRepository budgetRepository, BudgetCategoryBalanceRepository budgetCategoryBalanceRepository,
+	        QuotationTaskDetailRepository quotationTaskDetailRepository, StakeholderRepository stakeholderRepository,
+	        UserAccountRepository userAccountRepository, TemplateEngine templateEngine
+	        ) 
+		{
+	    this.quotationDetailRepository = quotationDetailRepository;
+	    this.quotationVersionRepository = quotationVersionRepository;
+	    this.budgetRepository = budgetRepository;
+	    this.budgetCategoryBalanceRepository = budgetCategoryBalanceRepository;
+	    this.quotationTaskDetailRepository = quotationTaskDetailRepository;
+	    this.stakeholderRepository = stakeholderRepository;
+	    this.userAccountRepository = userAccountRepository;
+	    this.templateEngine = templateEngine;
 	}
 
 	@Transactional
@@ -112,7 +118,7 @@ public class QuotationService {
 		quotationDetail.setSiteAddress(request.getSiteAddress());
 		quotationDetail.setAddComments(request.getAddComments());
 		quotationDetail.setCurrentVersion((short) 1);
-		quotationDetail.setQuotaStatus(QuotationStatus.DRAFTING);
+		quotationDetail.setQuoteStatus((short) 0);
 
 		quotationDetailRepository.save(quotationDetail);
 
@@ -125,8 +131,21 @@ public class QuotationService {
 		 */
 
 		List<QuotationTaskDetail> taskDetails = new ArrayList<>();
+		short taskId = 0;
+		short subTaskId = 0;
+		String previousTaskName = null;
 
 		for (QuotationTaskRequest taskRequest : request.getTasks()) {
+			
+			String currentTaskName = taskRequest.getTaskName().trim();
+
+		    if (!currentTaskName.equals(previousTaskName)) {
+		        taskId++;
+		        subTaskId = 1;
+		        previousTaskName = currentTaskName;
+		    } else {
+		        subTaskId++;
+		    }
 
 			BigDecimal price = taskRequest.getUnitCost().multiply(BigDecimal.valueOf(taskRequest.getQuantity()));
 
@@ -134,7 +153,9 @@ public class QuotationService {
 
 			taskDetail.setQuotationId(quotationId);
 			taskDetail.setVersionNumber((short) 1);
-			taskDetail.setTaskName(taskRequest.getTaskName());
+			taskDetail.setTaskId(taskId);
+		    taskDetail.setTaskName(currentTaskName);
+		    taskDetail.setSubTaskId(subTaskId);
 			taskDetail.setSubTaskName(taskRequest.getSubTaskName());
 			taskDetail.setQuantity(taskRequest.getQuantity());
 			taskDetail.setUnit(taskRequest.getUnit());
@@ -155,7 +176,7 @@ public class QuotationService {
 		quotationVersion.setVersionNumber((short) 1);
 		quotationVersion.setDraftedAt(draftDate);
 		quotationVersion.setDraftedBy(loggedInUserName);
-		quotationVersion.setQuoteStatus(QuotationStatus.DRAFTING);
+		quotationVersion.setQuoteStatus((short) 0);
 		quotationVersion.setExpiredAt(expiryDate);
 		quotationVersion.setAddComments(request.getAddComments());
 
@@ -225,7 +246,7 @@ public class QuotationService {
 				.orElseThrow(() -> new IllegalStateException("Quotation version not found for quotation ID: "
 						+ quotationId + ", version: " + currentVersion));
 
-		if (quotationVersion.getQuoteStatus() != QuotationStatus.DRAFTING) {
+		if (quotationVersion.getQuoteStatus() != (short) 0) {
 			throw new IllegalStateException("Only quotations in Drafting status can be edited.");
 		}
 
@@ -247,30 +268,45 @@ public class QuotationService {
 		 * Replace task details for the current Drafting version.
 		 */
 
-		List<QuotationTaskDetail> existingTasks = quotationTaskDetailRepository
-				.findByQuotationIdAndVersionNumber(quotationId, currentVersion);
+		List<QuotationTaskDetail> existingTasks = quotationTaskDetailRepository.findByQuotationIdAndVersionNumber(quotationId, currentVersion);
 
 		quotationTaskDetailRepository.deleteAll(existingTasks);
 
-		List<QuotationTaskDetail> taskDetails = new ArrayList<>();
+		short taskId = 0;
+		short subTaskId = 0;
+		String previousTaskName = null;
+
+		List<QuotationTaskDetail> updatedTaskDetails = new ArrayList<>();
 
 		for (QuotationTaskRequest taskRequest : request.getTasks()) {
+		    String currentTaskName = taskRequest.getTaskName().trim();
 
-			BigDecimal price = taskRequest.getUnitCost().multiply(BigDecimal.valueOf(taskRequest.getQuantity()));
+		    if (!currentTaskName.equals(previousTaskName)) {
+		        taskId++;
+		        subTaskId = 1;
+		        previousTaskName = currentTaskName;
+		    } else {
+		        subTaskId++;
+		    }
 
-			QuotationTaskDetail taskDetail = new QuotationTaskDetail();
+		    BigDecimal price = taskRequest.getUnitCost().multiply(BigDecimal.valueOf(taskRequest.getQuantity()));
+			
+		    QuotationTaskDetail taskDetail = new QuotationTaskDetail();
+		    taskDetail.setQuotationId(quotationId);
+		    taskDetail.setVersionNumber(currentVersion);
+		    taskDetail.setTaskId(taskId);
+		    taskDetail.setTaskName(currentTaskName);
+		    taskDetail.setSubTaskId(subTaskId);
+		    taskDetail.setSubTaskName(taskRequest.getSubTaskName());
+		    taskDetail.setQuantity(taskRequest.getQuantity());
+		    taskDetail.setUnit(taskRequest.getUnit());
+		    taskDetail.setUnitCost(taskRequest.getUnitCost());
+		    taskDetail.setPrice(price);
 
-			taskDetail.setQuotationId(quotationId);
-			taskDetail.setVersionNumber(currentVersion);
-			taskDetail.setTaskName(taskRequest.getTaskName());
-			taskDetail.setSubTaskName(taskRequest.getSubTaskName());
-			taskDetail.setQuantity(taskRequest.getQuantity());
-			taskDetail.setUnit(taskRequest.getUnit());
-			taskDetail.setUnitCost(taskRequest.getUnitCost());
-			taskDetail.setPrice(price);
-
-			taskDetails.add(taskDetail);
+		    updatedTaskDetails.add(taskDetail);
 		}
+
+		quotationTaskDetailRepository.saveAll(updatedTaskDetails);;
 
 		/*
 		 * Update current version.
@@ -288,16 +324,12 @@ public class QuotationService {
 		quotationVersionRepository.save(quotationVersion);
 
 		/*
-		 * Save updated task details.
+		 * Build task responses.
 		 */
-
 		List<QuotationTaskResponse> taskResponses = new ArrayList<>();
 
-		for (QuotationTaskDetail taskDetail : taskDetails) {
-
-			QuotationTaskDetail savedTask = quotationTaskDetailRepository.save(taskDetail);
-
-			taskResponses.add(toTaskResponse(savedTask));
+		for (QuotationTaskDetail taskDetail : updatedTaskDetails) {
+		    taskResponses.add(toTaskResponse(taskDetail));
 		}
 
 		return buildQuotationResponse(quotationDetail, quotationVersion, taskResponses);
@@ -316,13 +348,12 @@ public class QuotationService {
 				.orElseThrow(() -> new IllegalStateException("Quotation version not found for quotation ID: "
 						+ quotationId + ", version: " + currentVersion));
 
-		if (quotationVersion.getQuoteStatus() != QuotationStatus.DRAFTING) {
+		if (quotationVersion.getQuoteStatus() != (short) 0) {
 			throw new IllegalStateException("Only quotations in Drafting status can be sent to the customer.");
 		}
 
-		quotationVersion.setQuoteStatus(QuotationStatus.SENT_TO_CUSTOMER);
-
-		quotationDetail.setQuotaStatus(QuotationStatus.SENT_TO_CUSTOMER);
+		quotationVersion.setQuoteStatus((short) 1);
+		quotationDetail.setQuoteStatus((short) 1);
 
 		quotationVersionRepository.save(quotationVersion);
 		quotationDetailRepository.save(quotationDetail);
@@ -343,14 +374,13 @@ public class QuotationService {
 				.orElseThrow(() -> new IllegalStateException("Quotation version not found for quotation ID: "
 						+ quotationId + ", version: " + currentVersion));
 
-		if (quotationVersion.getQuoteStatus() != QuotationStatus.SENT_TO_CUSTOMER) {
+		if (quotationVersion.getQuoteStatus() != (short) 1) {
 
 			throw new IllegalStateException("Only quotations in Sent to Customer status can be accepted.");
 		}
 
-		quotationVersion.setQuoteStatus(QuotationStatus.ACCEPTED);
-
-		quotationDetail.setQuotaStatus(QuotationStatus.ACCEPTED);
+		quotationVersion.setQuoteStatus((short) 3);
+		quotationDetail.setQuoteStatus((short) 3);
 
 		quotationVersionRepository.save(quotationVersion);
 		quotationDetailRepository.save(quotationDetail);
@@ -373,14 +403,14 @@ public class QuotationService {
 				.orElseThrow(() -> new IllegalStateException("Quotation version not found for quotation ID: "
 						+ quotationId + ", version: " + currentVersion));
 
-		if (quotationVersion.getQuoteStatus() != QuotationStatus.SENT_TO_CUSTOMER) {
+		if (quotationVersion.getQuoteStatus() != (short) 1) {
 
 			throw new IllegalStateException("Only quotations in Sent to Customer status can be rejected.");
 		}
 
-		quotationVersion.setQuoteStatus(QuotationStatus.REJECTED);
+		quotationVersion.setQuoteStatus((short) 4);
 
-		quotationDetail.setQuotaStatus(QuotationStatus.REJECTED);
+		quotationDetail.setQuoteStatus((short) 4);;
 
 		quotationVersionRepository.save(quotationVersion);
 		quotationDetailRepository.save(quotationDetail);
@@ -401,9 +431,9 @@ public class QuotationService {
 				.orElseThrow(() -> new IllegalStateException("Quotation version not found for quotation ID: "
 						+ quotationId + ", version: " + currentVersion));
 
-		QuotationStatus currentStatus = currentQuotationVersion.getQuoteStatus();
+		Short currentStatus = currentQuotationVersion.getQuoteStatus();
 
-		if (currentStatus != QuotationStatus.ACCEPTED && currentStatus != QuotationStatus.REJECTED) {
+		if (currentStatus != (short) 3 && currentStatus != (short) 4) {
 
 			throw new IllegalStateException(
 					"A new version can only be created after the customer has accepted or rejected the current version.");
@@ -433,7 +463,7 @@ public class QuotationService {
 		newQuotationVersion.setVersionNumber(newVersionNumber);
 		newQuotationVersion.setDraftedAt(newDraftDate);
 		newQuotationVersion.setDraftedBy(loggedInUserName);
-		newQuotationVersion.setQuoteStatus(QuotationStatus.DRAFTING);
+		newQuotationVersion.setQuoteStatus((short) 0);
 		newQuotationVersion.setExpiredAt(newDraftDate);
 		newQuotationVersion.setAddComments(currentQuotationVersion.getAddComments());
 		newQuotationVersion.setMarketPrice(currentQuotationVersion.getMarketPrice());
@@ -462,7 +492,9 @@ public class QuotationService {
 
 			newTask.setQuotationId(quotationId);
 			newTask.setVersionNumber(newVersionNumber);
-			newTask.setTaskName(currentTask.getTaskName());
+			newTask.setTaskId(currentTask.getTaskId());
+		    newTask.setTaskName(currentTask.getTaskName());
+		    newTask.setSubTaskId(currentTask.getSubTaskId());
 			newTask.setSubTaskName(currentTask.getSubTaskName());
 			newTask.setQuantity(currentTask.getQuantity());
 			newTask.setUnit(currentTask.getUnit());
@@ -479,7 +511,7 @@ public class QuotationService {
 		quotationDetail.setCurrentVersion(newVersionNumber);
 		quotationDetail.setDraftDate(newDraftDate);
 		quotationDetail.setExpiryDate(newDraftDate);
-		quotationDetail.setQuotaStatus(QuotationStatus.DRAFTING);
+		quotationDetail.setQuoteStatus((short) 0);
 
 		quotationDetailRepository.save(quotationDetail);
 
@@ -511,7 +543,7 @@ public class QuotationService {
 
 		response.setVersionNumber(quotationVersion.getVersionNumber());
 
-		response.setQuoteStatus(quotationVersion.getQuoteStatus().getDatabaseValue());
+		response.setQuoteStatus(getQuoteStatusName(quotationVersion.getQuoteStatus()));
 
 		response.setMarketPrice(quotationVersion.getMarketPrice());
 
@@ -550,7 +582,7 @@ public class QuotationService {
 
 			response.setCustomer(quotationDetail.getCustomer());
 
-			response.setQuoteStatus(quotationVersion.getQuoteStatus().getDatabaseValue());
+			response.setQuoteStatus(getQuoteStatusName(quotationVersion.getQuoteStatus()));
 
 			response.setVersionNumber(quotationVersion.getVersionNumber());
 
@@ -571,12 +603,14 @@ public class QuotationService {
 		QuotationTaskResponse response = new QuotationTaskResponse();
 
 		response.setUtid(taskDetail.getUtid());
-		response.setTaskName(taskDetail.getTaskName());
-		response.setSubTaskName(taskDetail.getSubTaskName());
-		response.setQuantity(taskDetail.getQuantity());
-		response.setUnit(taskDetail.getUnit());
-		response.setUnitCost(taskDetail.getUnitCost());
-		response.setPrice(taskDetail.getPrice());
+	    response.setTaskId(taskDetail.getTaskId());
+	    response.setTaskName(taskDetail.getTaskName());
+	    response.setSubTaskId(taskDetail.getSubTaskId());
+	    response.setSubTaskName(taskDetail.getSubTaskName());
+	    response.setQuantity(taskDetail.getQuantity());
+	    response.setUnit(taskDetail.getUnit());
+	    response.setUnitCost(taskDetail.getUnitCost());
+	    response.setPrice(taskDetail.getPrice());
 
 		return response;
 	}
@@ -598,7 +632,7 @@ public class QuotationService {
 
 					response.setExpiredAt(version.getExpiredAt());
 
-					response.setQuoteStatus(version.getQuoteStatus());
+					response.setQuoteStatus(getQuoteStatusName(version.getQuoteStatus()));
 
 					response.setMarketPrice(version.getMarketPrice());
 
@@ -674,22 +708,79 @@ public class QuotationService {
 	
 	private void createOrUpdateBudget(String quotationId, BigDecimal quotationTotal) {
 
-	    BudgetInfo budgetInfo = budgetRepository.findByQuotationId(quotationId)
-	            .orElseGet(() -> {
-	                BudgetInfo newBudget = new BudgetInfo();
-	                newBudget.setQuotationId(quotationId);
-	                newBudget.setPurchaseMaterial(BigDecimal.ZERO);
-	                newBudget.setSubcontractor(BigDecimal.ZERO);
-	                newBudget.setLabourForces(BigDecimal.ZERO);
-	                newBudget.setTransportLogistics(BigDecimal.ZERO);
-	                newBudget.setMiscellaneous(BigDecimal.ZERO);
-	                newBudget.setStatus(true);
-	                return newBudget;
-	            });
+	    var existingBudget = budgetRepository.findByQuotationId(quotationId);
 
-	    budgetInfo.setTotalBudget(quotationTotal);
+	    BudgetInfo budgetInfo;
 
-	    budgetRepository.save(budgetInfo);
+	    if (existingBudget.isPresent()) {
+	        // Existing budget: update the total without resetting balances.
+	        budgetInfo = existingBudget.get();
+	        budgetInfo.setTotalBudget(quotationTotal);
+	        budgetRepository.save(budgetInfo);
+	        return;
+	    }
+
+	    // New budget: initialize all category allocations to zero.
+	    BudgetInfo newBudget = new BudgetInfo();
+	    newBudget.setQuotationId(quotationId);
+	    newBudget.setPurchaseMaterial(BigDecimal.ZERO);
+	    newBudget.setSubcontractor(BigDecimal.ZERO);
+	    newBudget.setLabourForces(BigDecimal.ZERO);
+	    newBudget.setTransportLogistics(BigDecimal.ZERO);
+	    newBudget.setMiscellaneous(BigDecimal.ZERO);
+	    newBudget.setTotalBudget(quotationTotal);
+	    newBudget.setStatus(true);
+
+	    // Save first to obtain the generated budget ID.
+	    budgetInfo = budgetRepository.save(newBudget);
+
+	    List<String> categories = List.of(
+	            "purchase_material",
+	            "subcontractor",
+	            "labour_forces",
+	            "transport_logistics",
+	            "miscellaneous"
+	    );
+
+	    LocalDate now = LocalDate.now();
+
+	    List<BudgetCategoryBalance> balances = categories.stream()
+	            .map(category -> {
+	                BudgetCategoryBalance balance = new BudgetCategoryBalance();
+
+	                balance.setId(new BudgetCategoryBalanceId(
+	                        budgetInfo.getBudgetId(),
+	                        category
+	                ));
+
+	                balance.setRemainingAmount(BigDecimal.ZERO);
+	                balance.setModifiedAt(now);
+
+	                return balance;
+	            })
+	            .toList();
+
+	    budgetCategoryBalanceRepository.saveAll(balances);
+	}
+	
+	private String getQuoteStatusName(Short statusId) {
+	    return switch (statusId) {
+	        case 0 -> "Drafting";
+	        case 1 -> "Sent to Customer";
+	        case 2 -> "Submitted";
+	        case 3 -> "Approved";
+	        case 4 -> "Rejected";
+	        case 5 -> "Order placed";
+	        case 6 -> "Order received";
+	        case 7 -> "Requested";
+	        case 8 -> "Allocated";
+	        case 9 -> "Initiated";
+	        case 10 -> "In Progress";
+	        case 11 -> "Delayed";
+	        case 12 -> "On Hold";
+	        case 13 -> "Completed";
+	        default -> "Unknown";
+	    };
 	}
 
 	public byte[] generateQuotationPdf(String quotationId) {
