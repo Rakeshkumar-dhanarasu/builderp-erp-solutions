@@ -234,8 +234,8 @@ export default function LoginPage() {
               <form onSubmit={handleLogin} noValidate>
                 <Stack gap="md">
                   <TextInput
-                    label="Email or Username"
-                    placeholder="Enter your email or username"
+                    label="Username"
+                    placeholder="Enter your username"
                     value={username}
                     onChange={(e) => setUsername(e.currentTarget.value)}
                     error={usernameError}

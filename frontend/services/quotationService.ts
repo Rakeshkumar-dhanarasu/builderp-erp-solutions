@@ -29,14 +29,16 @@ export interface UpdateQuotationRequest {
   addComments?: string;
   tasks: QuotationTaskRequest[];
   marketPrice: number;
-  taxPercent?: number;
+  taxPercent?: number; 
   discountAmount: number;
   total: number;
 }
 
 export interface QuotationTaskResponse {
   utid: number;
+  taskId: number;
   taskName: string;
+  subTaskId: number;
   subTaskName?: string;
   quantity: number;
   unit: string;

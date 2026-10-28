@@ -208,7 +208,7 @@ export default function SalesModule() {
     total: 0
   });
 
-  const [decisionType, setDecisionType] = useState<string | null>('Accepted');
+  const [decisionType, setDecisionType] = useState<string | null>('Approved');
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
 
@@ -385,7 +385,7 @@ export default function SalesModule() {
   const handleOpenDecision = async (quotationId: string) => {
     setQuotationLoading(true);
     setQuotationError(null);
-    setDecisionType('Accepted');
+    setDecisionType('Approved');
 
     try {
       const response = await getQuotation(quotationId);
@@ -580,7 +580,7 @@ export default function SalesModule() {
 
     if (activeQuotation.quoteStatus !== 'Sent to Customer') {
       setQuotationError(
-        'A quotation can only be accepted or rejected after it has been sent to the customer.'
+        'A quotation can only be Approved or rejected after it has been sent to the customer.'
       );
       return;
     }
@@ -590,7 +590,7 @@ export default function SalesModule() {
 
     try {
       const response =
-        decisionType === 'Accepted'
+        decisionType === 'Approved'
           ? await acceptQuotation(activeQuotation.quotationId)
           : await rejectQuotation(activeQuotation.quotationId);
 
@@ -618,9 +618,9 @@ export default function SalesModule() {
       return;
     }
 
-    if (currentStatus !== 'Accepted' && currentStatus !== 'Rejected') {
+    if (currentStatus !== 'Approved' && currentStatus !== 'Rejected') {
       setQuotationError(
-        'A new quotation version can only be created after Accepted or Rejected.'
+        'A new quotation version can only be created after Approved or Rejected.'
       );
       return;
     }
@@ -677,7 +677,7 @@ export default function SalesModule() {
     const maps: Record<string, string> = {
       Drafting: 'gray',
       'Sent to Customer': 'blue',
-      Accepted: 'green',
+      Approved: 'green',
       Rejected: 'red',
       Pending: 'yellow',
       Paid: 'green',
@@ -695,7 +695,7 @@ export default function SalesModule() {
   // ==========================================
   // BUDGET ALLOCATION STATES
   // ==========================================
-  const approvedQuotations = quotations.filter((q) => q.quoteStatus === 'Accepted');
+  const approvedQuotations = quotations.filter((q) => q.quoteStatus === 'Approved');
 
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [budget, setBudget] = useState<BudgetResponse | null>(null);
@@ -899,7 +899,7 @@ export default function SalesModule() {
                 <Select
                   label="Filter Status"
                   placeholder="All Stages"
-                  data={['Drafting', 'Sent to Customer', 'Accepted', 'Rejected']}
+                  data={['Drafting', 'Sent to Customer', 'Approved', 'Rejected']}
                   value={statusFilter}
                   onChange={setStatusFilter}
                   clearable
@@ -974,6 +974,7 @@ export default function SalesModule() {
 
                       <Table.Td>
                         <Group gap={4} wrap="nowrap">
+                          
                           <Tooltip label="View Quotation">
                             <ActionIcon variant="subtle" size="sm" onClick={() => openQuotation(q.quotationId, 'view')}>
                               <IconEye size={16} />
@@ -994,6 +995,11 @@ export default function SalesModule() {
                             </ActionIcon>
                           </Tooltip>
 
+                          {(() => {
+                            console.log('Quotation status:', q.quoteStatus);
+                            return null;
+                          })()}
+
                           {q.quoteStatus === 'Sent to Customer' && (
                             <Tooltip label="Record Customer Decision">
                               <ActionIcon variant="subtle" color="green" size="sm" onClick={() => handleOpenDecision(q.quotationId)}>
@@ -1002,7 +1008,7 @@ export default function SalesModule() {
                             </Tooltip>
                           )}
 
-                          {(q.quoteStatus === 'Accepted' || q.quoteStatus === 'Rejected') && (
+                          {(q.quoteStatus === 'Approved' || q.quoteStatus === 'Rejected') && (
                             <Tooltip label="Create New Version">
                               <ActionIcon
                                 variant="subtle"
@@ -1076,7 +1082,7 @@ export default function SalesModule() {
               ) : !selectedProject ? (
                 <Paper withBorder p="xl" radius="md" mt="xl">
                   <Text size="sm" c="dimmed" ta="center">
-                    Select an accepted quotation to view its budget allocation.
+                    Select an Approved quotation to view its budget allocation.
                   </Text>
                 </Paper>
               ) : budget ? (
@@ -1252,7 +1258,7 @@ export default function SalesModule() {
                   </>
                 ) : (
                   <Text size="sm" c="dimmed" ta="center" mt="xl">
-                    Select an accepted quotation to view its allocation.
+                    Select an Approved quotation to view its allocation.
                   </Text>
                 )}
               </Card>
@@ -1385,7 +1391,7 @@ export default function SalesModule() {
               <Group justify="space-between">
                 <Group gap="xs">
                   {activeQuotation &&
-                    ['Accepted', 'Rejected'].includes(activeQuotation.quoteStatus) && (
+                    ['Approved', 'Rejected'].includes(activeQuotation.quoteStatus) && (
                       <Button
                         variant="light"
                         color="orange"
@@ -1458,13 +1464,13 @@ export default function SalesModule() {
           value={decisionType}
           onChange={setDecisionType}
           data={[
-            { value: 'Accepted', label: 'Accepted' },
+            { value: 'Approved', label: 'Approved' },
             { value: 'Rejected', label: 'Rejected' }
           ]}
           mb="md"
         />
 
-        {decisionType === 'Accepted' ? (
+        {decisionType === 'Approved' ? (
           <>
             <TextInput label="Decision Date" type="date" defaultValue={getToday()} mb="md" />
             <FileInput
@@ -1488,11 +1494,11 @@ export default function SalesModule() {
         <Group justify="end">
           <Button variant="default" onClick={() => setDecisionOpen(false)}>Cancel</Button>
           <Button
-            color={decisionType === 'Accepted' ? 'green' : 'red'}
+            color={decisionType === 'Approved' ? 'green' : 'red'}
             loading={quotationActionLoading}
             onClick={handleDecision}
           >
-            {decisionType === 'Accepted' ? 'Record Acceptance' : 'Record Rejection'}
+            {decisionType === 'Approved' ? 'Record Acceptance' : 'Record Rejection'}
           </Button>
         </Group>
       </Modal>
@@ -1514,7 +1520,7 @@ export default function SalesModule() {
               <Timeline.Item
                 key={hist.versionNumber}
                 bullet={
-                  hist.quoteStatus === 'Accepted' ? <IconCheck size={12} /> :
+                  hist.quoteStatus === 'Approved' ? <IconCheck size={12} /> :
                   hist.quoteStatus === 'Rejected' ? <IconX size={12} /> :
                   <IconAlertCircle size={12} />
                 }
